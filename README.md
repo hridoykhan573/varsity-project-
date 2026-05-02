@@ -88,25 +88,66 @@ PawHub is powered by a high-concurrency real-time engine to ensure instant commu
 
 ---
 
-## 🏁 Technical Setup & Installation
+## 🏁 Manual Setup Guide (Step-by-Step)
 
-Follow these steps to launch the full PawHub ecosystem in your local environment.
+Follow these steps in order to run the full PawHub ecosystem manually. You will need 3 separate terminal windows.
 
-### 1. Backend (Django)
+### 📋 Prerequisites
+- **Python 3.10+**
+- **Node.js 18+**
+- **MySQL** (Running locally for the Auth Service)
+
+---
+
+### Step 1: Backend (Django)
+*Terminal 1*
 ```bash
+# 1. Navigate to backend and setup environment
 cd backend
 python -m venv .venv
+
+# 2. Activate environment
+# For Windows:
+.venv\Scripts\activate
+
+# For Mac/Linux:
 source .venv/bin/activate
+
+# 3. Install requirements (from root)
 pip install -r ../requirements.txt
+
+# 4. Initialize Database & Start
 python manage.py migrate
-python seed_data.py # Optional: Populates the platform with sample data!
+python seed_data.py # Optional: Populates sample data
 python manage.py runserver
 ```
 
-### 2. Frontend (React/Vite)
+### Step 2: Auth Service (Node.js)
+*Terminal 2*
 ```bash
-cd frontend
+# 1. Navigate to auth service
+cd auth_service_node
+
+# 2. Install dependencies
 npm install
+
+# 3. Configure .env (Ensure MySQL is running)
+# Create a .env file with DB_USER, DB_PASS, DB_NAME
+
+# 4. Start service
+npm run dev
+```
+
+### Step 3: Frontend (React)
+*Terminal 3*
+```bash
+# 1. Navigate to frontend
+cd frontend
+
+# 2. Install dependencies
+npm install
+
+# 3. Start the dev server
 npm run dev
 ```
 
