@@ -1,0 +1,1456 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <title>Dashboard | Group Portal | PawHub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0d9488;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+
+            /* Button Gradients Based on Admin Design */
+            --btn-add-start: #14b8a6;
+            --btn-add-end: #0d9488;
+            --btn-change-start: #3b82f6;
+            --btn-change-end: #2563eb;
+            --btn-view-start: #64748b;
+            --btn-view-end: #475569;
+            --btn-delete-start: #f43f5e;
+            --btn-delete-end: #e11d48;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        .topbar {
+            background: #1e293b;
+            color: #ffffff;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .topbar-brand h1 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .topbar-brand h1 i {
+            color: var(--primary);
+        }
+
+        .group-badge {
+            background: #334155;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .topbar-user {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .logout-btn {
+            color: #f87171;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .logout-btn:hover {
+            color: #ef4444;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            flex: 1;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .page-header p {
+            margin: 0;
+            color: var(--text-muted);
+        }
+
+        /* Modules Grid (Same concept as admin) */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        @media (min-width: 1100px) {
+            .modules-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-header i {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .action-buttons p {
+            grid-column: span 2;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1rem;
+            border-radius: 9999px; /* Admin pill shape */
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Softer shadow */
+        }
+
+        /* Admin Action Button Colors (WowDash Style) */
+        .btn-add { background: #fff7ed; color: #ea580c; border-color: #ffedd5; }
+        .btn-change { background: #ebfdf5; color: #047857; border-color: #a7f3d0; }
+        .btn-view { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+        .btn-delete { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+
+        /* Profile Styles */
+        .topbar-user {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            color: #fff;
+        }
+
+        .profile-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+
+        .profile-container:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .profile-image-wrapper {
+            position: relative;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .profile-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-image-wrapper .fa-user-circle {
+            font-size: 1.8rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .profile-upload-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            color: #fff;
+            font-size: 0.8rem;
+        }
+
+        .profile-container:hover .profile-upload-overlay {
+            opacity: 1;
+        }
+
+        .profile-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        /* Premium Modal Styles (Fixed Layout) */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .drawer-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -45%) scale(0.95);
+            width: 480px;
+            max-width: calc(100% - 2rem);
+            max-height: 80vh;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .drawer.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .drawer-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+        }
+
+        .drawer-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #1e293b;
+        }
+
+        .close-drawer {
+            background: #f1f5f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .close-drawer:hover {
+            background: #fee2e2;
+            color: #ef4444;
+            transform: rotate(90deg);
+        }
+
+        .drawer-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 2rem 2rem;
+        }
+
+        /* Refined Activity List */
+        .activity-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .activity-item {
+            padding: 1.25rem 0;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 36px;
+            height: 36px;
+            background: #f0fdfa;
+            color: #0d9488;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+
+        .activity-details {
+            flex: 1;
+        }
+
+        .activity-action {
+            display: block;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-time {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .delete-activity-btn {
+            background: transparent;
+            border: none;
+            color: #cbd5e1;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+            margin-left: auto;
+            opacity: 0;
+        }
+
+        .activity-item:hover .delete-activity-btn {
+            opacity: 1;
+        }
+
+        .delete-activity-btn:hover {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .activity-item.deleting {
+            transform: translateX(20px);
+            opacity: 0;
+            transition: all 0.4s ease;
+        }
+
+        /* Top Bar Button with Badge */
+        .activity-trigger {
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .activity-trigger:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .activity-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #f43f5e;
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 800;
+            box-shadow: 0 2px 4px rgba(244, 63, 94, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        /* Messaging Custom Styles */
+        .message-item {
+            padding: 1.25rem;
+            border-radius: 16px;
+            background: #fff;
+            border: 1px solid var(--border);
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .message-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.1);
+        }
+
+        .message-item.unread {
+            background: #f0fdfa;
+            border-left: 4px solid var(--primary);
+        }
+
+        .message-unread-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .message-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .message-subject {
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.25rem;
+            font-size: 0.95rem;
+        }
+
+        .message-excerpt {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .btn-msg {
+            background: var(--primary);
+            color: #fff;
+            padding: 0.8rem 1.5rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        /* Toast Container */
+        #toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .toast {
+            background: #1e293b;
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease forwards;
+            border-left: 4px solid var(--primary);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        /* Enhanced Modal Design (Matching Screenshot) */
+        .modal-megaphone-wrapper {
+            width: 50px;
+            height: 50px;
+            background: #eef2ff;
+            color: #6366f1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .modal-title-main {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .modal-subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 4px;
+            line-height: 1.5;
+        }
+
+        .modal-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #94a3b8;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 0.6rem;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 0.9rem 1.2rem;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: #1e293b;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .send-groups-container {
+            border: 1px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .pill-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 99px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #475569;
+            transition: all 0.2s;
+            background: #fff;
+            user-select: none;
+        }
+
+        .pill-checkbox input {
+            accent-color: #2563eb;
+            width: 16px;
+            height: 16px;
+        }
+
+        .pill-checkbox:has(input:checked) {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+        .portal-groups-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .portal-groups-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        .portal-groups-sub {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .error-text {
+            color: #ef4444;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+    </style>
+
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-brand">
+        <h1><i class="fas fa-paw"></i> PawHub</h1>
+        <span class="group-badge">{{ member.group.name }} Portal</span>
+    </div>
+    <div class="topbar-user">
+        <button class="activity-trigger" id="openDrawer">
+            <i class="fas fa-history"></i> 
+            <span>History</span>
+            {% if recent_activity %}<span class="activity-badge" id="activityBadge">{{ recent_activity|length }}</span>{% endif %}
+        </button>
+
+        <button class="activity-trigger" id="openMessages">
+            <i class="fas fa-envelope"></i> 
+            <span>Inbox</span>
+            {% if unread_count %}<span class="activity-badge" id="msgBadge">{{ unread_count }}</span>{% endif %}
+        </button>
+        
+        <div class="profile-container" id="profileTrigger" title="Click to change photo">
+            <div class="profile-image-wrapper" id="profileImageWrapper">
+                {% if member.profile_picture %}
+                    <img src="{{ member.profile_picture.url }}" id="profileImg" alt="Profile">
+                {% else %}
+                    <i class="fas fa-user-circle" id="profilePlaceholder"></i>
+                {% endif %}
+                <div class="profile-upload-overlay">
+                    <i class="fas fa-camera"></i>
+                </div>
+            </div>
+            <span class="profile-name">{{ member.display_name|default:member.email }}</span>
+            <input type="file" id="profileInput" accept="image/*" style="display:none;">
+        </div>
+
+        <a href="{% url 'group_portal:logout' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="page-header">
+        <h2>Action Dashboard</h2>
+        <p>You have access to {{ total_permissions }} authorized action{{ total_permissions|pluralize }}. Activity is monitored.</p>
+    </div>
+
+    {% if ordered_categories %}
+        <div class="modules-grid">
+            <!-- Communications Quick Access -->
+            <div class="card" style="border-top: 4px solid var(--primary);">
+                <div class="card-header">
+                    <i class="fas fa-paper-plane" style="color: var(--primary);"></i>
+                    <h3>Communications</h3>
+                </div>
+                <div class="action-buttons">
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Broadcast updates to site users and members instantly.</p>
+                    <button class="btn btn-add" id="dashboardComposeBtn" onclick="openCompose()">
+                        <i class="fas fa-bullhorn"></i> Send Platform Message
+                    </button>
+                    <button class="btn btn-view" onclick="toggleMsgDrawer(true)">
+                        <i class="fas fa-inbox"></i> View Inbox
+                    </button>
+                </div>
+            </div>
+
+            {% for category in ordered_categories %}
+                <div class="card">
+                    <div class="card-header">
+                        {% if category.name == 'Users' %}<i class="fas fa-users"></i>
+                        {% elif category.name == 'Pets' %}<i class="fas fa-dog"></i>
+                        {% elif category.name == 'Shelters' %}<i class="fas fa-home"></i>
+                        {% elif category.name == 'Bookings' %}<i class="fas fa-calendar-alt"></i>
+                        {% elif category.name == 'Adoptions' %}<i class="fas fa-hand-holding-heart"></i>
+                        {% elif category.name == 'Reviews' %}<i class="fas fa-star"></i>
+                        {% elif category.name == 'Complaints' %}<i class="fas fa-comment-dots"></i>
+                        {% elif category.name == 'Products' %}<i class="fas fa-shopping-basket"></i>
+                        {% elif category.name == 'Payments' %}<i class="fas fa-credit-card"></i>
+                        {% elif category.name == 'Notifications' %}<i class="fas fa-bell"></i>
+                        {% elif category.name == 'Health' %}<i class="fas fa-notes-medical"></i>
+                        {% else %}<i class="fas fa-folder"></i>{% endif %}
+                        <h3>{{ category.name }}</h3>
+                    </div>
+                    <div class="action-buttons">
+                        {% for btn in category.buttons %}
+                            <button class="btn {{ btn.color }} action-btn" 
+                                    data-url="{{ btn.admin_url }}" 
+                                    data-codename="{{ btn.codename }}"
+                                    data-label="{{ btn.label }}">
+                                <i class="fas {{ btn.icon }}"></i> {{ btn.label }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="text-align:center; padding: 4rem; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 3rem;">
+            <i class="fas fa-shield-alt" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <h3>No Permissions Assigned</h3>
+            <p style="color: var(--text-muted);">Your group has no actionable permissions. Contact the administrator.</p>
+        </div>
+    {% endif %}
+
+</div>
+
+<!-- Drawers Overlay -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+
+<!-- Activity History Drawer -->
+<div class="drawer" id="activityDrawer">
+    <div class="drawer-header">
+        <h3><i class="fas fa-history text-muted"></i> Activity History</h3>
+        <button class="close-drawer" id="closeDrawer">&times;</button>
+    </div>
+    <div class="drawer-content">
+        <ul class="activity-list" id="activityList">
+            {% if recent_activity %}
+                {% for log in recent_activity %}
+                    <li class="activity-item" id="activity-{{ log.pk }}">
+                        <div class="activity-icon"><i class="fas fa-clock-rotate-left"></i></div>
+                        <div class="activity-details">
+                            <span class="activity-action">{{ log.action }}</span>
+                            <span class="activity-time"><i class="far fa-clock"></i> {{ log.timestamp|timesince }} ago</span>
+                        </div>
+                        <button class="delete-activity-btn js-delete-activity" data-id="{{ log.pk }}" title="Remove from list">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </li>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+                    <i class="fas fa-history" style="font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <p style="font-weight: 500;">No recent activity to show.</p>
+                </div>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+
+<!-- Messaging Drawer -->
+<div class="drawer" id="messageDrawer" style="z-index: 1002;">
+    <div class="drawer-header">
+        <h3><i class="fas fa-envelope text-muted"></i> Messaging Inbox</h3>
+        <button class="close-drawer" id="closeMessages">&times;</button>
+    </div>
+    <div class="drawer-content">
+        <div style="margin-bottom: 1.5rem;">
+            <button class="btn btn-add" id="composeBtn" style="width: 100%; justify-content: center; gap: 0.75rem;">
+                <i class="fas fa-paper-plane"></i> Send Inquiry to Admin
+            </button>
+        </div>
+
+        <div id="messageList">
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="message-item {% if not msg.is_read %}unread{% endif %} js-message-item" 
+                         data-id="{{ msg.pk }}"
+                         data-subject="{{ msg.subject|escapejs }}"
+                         data-body="{{ msg.body|escapejs }}"
+                         data-date="{{ msg.created_at|date:'M d, Y H:i' }}"
+                         data-read="{{ msg.is_read|yesno:'true,false' }}">
+                        <div class="message-meta">
+                            <span>{% if msg.recipient_group %}<i class="fas fa-bullhorn"></i> Global Announcement{% else %}<i class="fas fa-user-shield"></i> Private Message{% endif %}</span>
+                            <span>{{ msg.created_at|timesince }} ago</span>
+                        </div>
+                        <div class="message-subject">
+                            {% if not msg.is_read %}<span class="message-unread-dot"></span>{% endif %}
+                            {{ msg.subject }}
+                        </div>
+                        <div class="message-excerpt">{{ msg.body }}</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+                    <i class="fas fa-envelope-open" style="font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <p style="font-weight: 500;">Your inbox is empty.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Message Detail Modal -->
+<div class="drawer" id="msgDetailModal" style="z-index: 1003; height: auto; top: 50%; width: 450px;">
+    <div class="drawer-header">
+        <h3 id="modalSubject">Message Details</h3>
+        <button class="close-drawer" onclick="closeMsgDetail()">&times;</button>
+    </div>
+    <div class="drawer-content" style="padding: 2rem;">
+        <div id="modalMeta" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;"></div>
+        <div id="modalBody" style="font-size: 1rem; line-height: 1.6; color: var(--text-main); white-space: pre-wrap;"></div>
+        <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+            <button class="btn btn-view" onclick="closeMsgDetail()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Compose Message Modal (Modernized) -->
+<div class="drawer" id="composeModal" style="z-index: 1003; height: auto; top: 50%; width: 550px; transform: translate(-50%, -50%); border-radius: 20px;">
+    <div class="drawer-header" style="padding: 1.5rem 2rem; align-items: flex-start; border-bottom: none;">
+        <div style="display: flex; gap: 1rem;">
+            <div class="modal-megaphone-wrapper">
+                <i class="fas fa-bullhorn"></i>
+            </div>
+            <div>
+                <h3 class="modal-title-main">Send platform message</h3>
+                <p class="modal-subtitle">Deliver an in-app notification (bell on the main site) to whole groups and/or hand-picked accounts.</p>
+            </div>
+        </div>
+        <button class="close-drawer" onclick="closeCompose()"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="drawer-content" style="padding: 0 2rem 2rem; max-height: 80vh; overflow-y: auto;">
+        <div class="field-group" style="margin-bottom: 1.5rem;">
+            <label class="modal-label">Title</label>
+            <input type="text" id="compSubject" class="modal-input" placeholder="e.g. Scheduled maintenance tonight">
+        </div>
+
+        <div class="field-group" style="margin-bottom: 1.5rem;">
+            <label class="modal-label">Message</label>
+            <textarea id="compBody" class="modal-input" rows="4" placeholder="Write a clear, friendly message..." style="resize: none;"></textarea>
+        </div>
+
+        <div class="send-groups-container">
+            <label class="modal-label">Send to Groups</label>
+            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: -0.4rem; margin-bottom: 1rem;">Everyone in the role receives the message.</p>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                {% for role in role_choices %}
+                <label class="pill-checkbox">
+                    <input type="checkbox" name="broadcast_role" value="{{ role.value }}">
+                    {{ role.label }}
+                </label>
+                {% endfor %}
+            </div>
+
+            <div class="portal-groups-header">
+                <span class="portal-groups-title">Portal Groups:</span>
+                <span class="portal-groups-sub">(managed in Group Portal)</span>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                {% if portal_groups %}
+                    {% for g in portal_groups %}
+                    <label class="pill-checkbox">
+                        <input type="checkbox" name="portal_group" value="{{ g.id }}">
+                        {{ g.name }}
+                    </label>
+                    {% endfor %}
+                {% else %}
+                    <p class="error-text">Failed to load groups.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Individual Search -->
+        <div style="margin-top: 1.5rem;">
+            <label class="modal-label">Individual Recipients</label>
+            <div style="position: relative; display: flex; gap: 10px;">
+                <input type="text" id="userSearch" class="modal-input" placeholder="Type name or email..." style="padding: 0.7rem 1rem;">
+                <div id="searchResults" style="position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 100; display: none; margin-top: 8px; max-height: 200px; overflow-y: auto;"></div>
+            </div>
+            <div id="selectedRecipients" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
+        </div>
+
+        <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
+            <button class="btn btn-secondary" onclick="closeCompose()" style="background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b;">Cancel</button>
+            <button class="btn btn-primary" id="sendMsgBtn" onclick="sendBroadcast()" style="padding-left: 2rem; padding-right: 2rem; background: #2563eb;">
+                Send Broadcast
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const templateCsrf = '{{ csrf_token }}';
+    const csrfToken = templateCsrf || getCookie('csrftoken');
+    
+    function showToast(message) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `<i class="fas fa-check-circle" style="color:var(--primary);"></i> <span>${message}</span>`;
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'fadeOut 0.3s ease forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    
+    // Drawer Interaction
+    const activityDrawer = document.getElementById('activityDrawer');
+    const drawerOverlay = document.getElementById('drawerOverlay');
+    const openBtn = document.getElementById('openDrawer');
+    const closeBtn = document.getElementById('closeDrawer');
+
+    function toggleDrawer(show = true) {
+        if (show) {
+            activityDrawer.classList.add('active');
+            drawerOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        } else {
+            activityDrawer.classList.remove('active');
+            drawerOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    openBtn.addEventListener('click', () => toggleDrawer(true));
+    closeBtn.addEventListener('click', () => toggleDrawer(false));
+    drawerOverlay.addEventListener('click', () => toggleDrawer(false));
+
+    document.addEventListener('click', function(e) {
+        const delBtn = e.target.closest('.js-delete-activity');
+        if (delBtn) {
+            deleteActivity(delBtn.dataset.id);
+        }
+    });
+
+    function deleteActivity(logId) {
+        if (!logId) return;
+
+        fetch('{% url "group_portal:delete_activity" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ log_id: logId })
+        }).then(res => res.json()).then(data => {
+            if (data.ok) {
+                const el = document.getElementById(`activity-${logId}`);
+                if (el) {
+                    el.classList.add('deleting');
+                    setTimeout(() => {
+                        el.remove();
+                        const list = document.getElementById('activityList');
+                        if (list && list.children.length === 0) {
+                            location.reload(); // Show empty state if all deleted
+                        }
+                    }, 400);
+                }
+            } else {
+                console.error('Delete failed:', data.error);
+            }
+        }).catch(err => console.error(err));
+    }
+
+    // Profile Photo Upload
+    const profileTrigger = document.getElementById('profileTrigger');
+    const profileInput = document.getElementById('profileInput');
+    const profileImgWrapper = document.getElementById('profileImageWrapper');
+
+    profileTrigger.addEventListener('click', () => profileInput.click());
+
+    profileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('profile_picture', file);
+
+        // Visual feedback
+        profileImgWrapper.style.opacity = '0.5';
+        
+        fetch('{% url "group_portal:upload_profile_picture" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            profileImgWrapper.style.opacity = '1';
+            if (data.ok) {
+                showToast(data.msg);
+                
+                // Update Image UI
+                let img = document.getElementById('profileImg');
+                const placeholder = document.getElementById('profilePlaceholder');
+                
+                if (!img) {
+                    if (placeholder) placeholder.remove();
+                    img = document.createElement('img');
+                    img.id = 'profileImg';
+                    img.alt = 'Profile';
+                    profileImgWrapper.prepend(img);
+                }
+                img.src = data.image_url;
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(err => {
+            profileImgWrapper.style.opacity = '1';
+            console.error(err);
+        });
+    });
+    
+    function prependActivity(action, logId) {
+        const list = document.getElementById('activityList');
+        const badge = document.getElementById('activityBadge');
+        const trigger = document.getElementById('openDrawer');
+
+        // If list was hidden (empty state case)
+        if (list.style.display === 'none') {
+            list.style.display = 'block';
+            list.parentElement.querySelector('div')?.remove(); // remove empty msg
+        }
+        
+        const li = document.createElement('li');
+        li.className = 'activity-item';
+        if (logId) li.id = `activity-${logId}`;
+        
+        li.innerHTML = `
+            <div class="activity-icon"><i class="fas fa-clock-rotate-left"></i></div>
+            <div class="activity-details">
+                <span class="activity-action">${action}</span>
+                <span class="activity-time"><i class="far fa-clock"></i> Just now</span>
+            </div>
+            ${logId ? `
+            <button class="delete-activity-btn js-delete-activity" data-id="${logId}" title="Remove from list">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+            ` : ''}
+        `;
+        list.insertBefore(li, list.firstChild);
+        
+        // Update badge
+        if (badge) {
+            badge.innerText = parseInt(badge.innerText) + 1;
+        } else {
+            // Create badge if it didn't exist
+            const newBadge = document.createElement('span');
+            newBadge.className = 'activity-badge';
+            newBadge.id = 'activityBadge';
+            newBadge.innerText = '1';
+            trigger.appendChild(newBadge);
+        }
+
+        // keep max 20
+        if (list.children.length > 20) {
+            list.lastChild.remove();
+        }
+    }
+
+    document.querySelectorAll('.action-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            const codename = this.getAttribute('data-codename');
+            const label = this.getAttribute('data-label');
+            const actionText = `Clicked: ${label}`;
+
+            // Track activity via AJAX
+            fetch('{% url "group_portal:track" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken') || templateCsrf
+                },
+                body: JSON.stringify({
+                    action: actionText,
+                    codename: codename
+                })
+            }).then(res => {
+                if (!res.ok && res.status === 401) {
+                    throw new Error('Not authenticated.');
+                }
+                return res.json();
+            }).then(data => {
+                if(data.ok) {
+                    showToast('Action logged securely. Opening portal interface...');
+                    prependActivity(actionText, data.log_id);
+                    
+                    // Proceed to URL after short delay
+                    setTimeout(() => {
+                        window.location.href = url;
+                    }, 800);
+                } else {
+                    console.error('Track failed:', data.error);
+                    // navigate anyway fallback on log failure
+                    window.location.href = url;
+                }
+            }).catch(err => {
+                console.error('Session/CSRF error:', err);
+                // navigate anyway fallback
+                window.location.href = url;
+            });
+        });
+    });
+
+    // Messaging UI Interactions
+    const msgDrawer = document.getElementById('messageDrawer');
+    const openMsgBtn = document.getElementById('openMessages');
+    const closeMsgBtn = document.getElementById('closeMessages');
+    const composeBtn = document.getElementById('composeBtn');
+    const composeModal = document.getElementById('composeModal');
+    const msgDetailModal = document.getElementById('msgDetailModal');
+
+    function toggleMsgDrawer(show = true) {
+        if (show) {
+            msgDrawer.classList.add('active');
+            drawerOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        } else {
+            msgDrawer.classList.remove('active');
+            drawerOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    openMsgBtn.addEventListener('click', () => toggleMsgDrawer(true));
+    closeMsgBtn.addEventListener('click', () => toggleMsgDrawer(false));
+
+    function closeCompose() {
+        composeModal.classList.remove('active');
+        if (!msgDrawer.classList.contains('active')) drawerOverlay.classList.remove('active');
+    }
+
+    composeBtn.addEventListener('click', () => {
+        composeModal.classList.add('active');
+        drawerOverlay.classList.add('active');
+    });
+
+    function closeMsgDetail() {
+        msgDetailModal.classList.remove('active');
+        if (!msgDrawer.classList.contains('active')) drawerOverlay.classList.remove('active');
+    }
+
+    document.addEventListener('click', function(e) {
+        const item = e.target.closest('.js-message-item');
+        if (item) {
+            const d = item.dataset;
+            viewMessage(d.id, d.subject, d.body, d.date, d.read === 'true', item);
+        }
+    });
+
+    function viewMessage(id, subject, body, date, isRead, element) {
+        document.getElementById('modalSubject').innerText = subject;
+        document.getElementById('modalBody').innerText = body;
+        document.getElementById('modalMeta').innerText = `Received on: ${date}`;
+        msgDetailModal.classList.add('active');
+        drawerOverlay.classList.add('active');
+
+        if (!isRead) {
+            // Mark as read via AJAX
+            fetch('{% url "group_portal:mark_message_read" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ msg_id: id })
+            }).then(res => res.json()).then(data => {
+                if (data.ok) {
+                    if (element) {
+                        element.classList.remove('unread');
+                        element.dataset.read = 'true';
+                        const dot = element.querySelector('.message-unread-dot');
+                        if (dot) dot.remove();
+                    }
+                    const badge = document.getElementById('msgBadge');
+                    if (badge) {
+                        const count = parseInt(badge.innerText) - 1;
+                        if (count <= 0) badge.remove();
+                        else badge.innerText = count;
+                    }
+                }
+            });
+        }
+    }
+
+    // --- NEW BROADCAST LOGIC (Mirrors Admin) ---
+    const searchInput = document.getElementById('userSearch');
+    const roleFilter = document.getElementById('roleFilter');
+    const resultsBox = document.getElementById('searchResults');
+    const selectedBox = document.getElementById('selectedRecipients');
+    
+    let selectedRecipients = new Set();
+    let searchTimeout = null;
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const q = this.value.trim();
+            const role = roleFilter.value;
+
+            if (q.length < 2 && !role) {
+                resultsBox.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                fetch(`{% url 'group_portal:broadcast_search' %}?q=${encodeURIComponent(q)}&role=${role}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        resultsBox.innerHTML = '';
+                        if (data.results && data.results.length > 0) {
+                            data.results.forEach(res => {
+                                const div = document.createElement('div');
+                                div.style.padding = '10px 15px';
+                                div.style.cursor = 'pointer';
+                                div.style.borderBottom = '1px solid var(--border)';
+                                div.style.display = 'flex';
+                                div.style.justifyContent = 'space-between';
+                                div.style.fontSize = '0.85rem';
+                                div.innerHTML = `<span>${res.text}</span> <span style="font-size:0.7rem; background:var(--bg-hover); padding:2px 6px; border-radius:4px;">${res.type}</span>`;
+                                div.onclick = () => addRecipient(res.id, res.text);
+                                resultsBox.appendChild(div);
+                            });
+                            resultsBox.style.display = 'block';
+                        } else {
+                            resultsBox.style.display = 'none';
+                        }
+                    });
+            }, 300);
+        });
+
+        if (roleFilter) {
+            roleFilter.addEventListener('change', () => searchInput.dispatchEvent(new Event('input')));
+        }
+
+        function addRecipient(id, text) {
+            if (selectedRecipients.has(id)) return;
+            selectedRecipients.add(id);
+            
+            const chip = document.createElement('span');
+            chip.style.display = 'inline-flex';
+            chip.style.alignItems = 'center';
+            chip.style.gap = '8px';
+            chip.style.padding = '4px 12px';
+            chip.style.background = 'rgba(var(--primary-rgb), 0.1)';
+            chip.style.color = 'var(--primary)';
+            chip.style.borderRadius = '99px';
+            chip.style.fontSize = '0.75rem';
+            chip.style.fontWeight = '600';
+            chip.id = `chip-${id}`;
+            chip.innerHTML = `${text} <i class="fas fa-times" style="cursor:pointer; opacity:0.6;" onclick="removeRecipient('${id}')"></i>`;
+            selectedBox.appendChild(chip);
+            
+            searchInput.value = '';
+            resultsBox.style.display = 'none';
+        }
+
+        window.removeRecipient = function(id) {
+            selectedRecipients.delete(id);
+            const chip = document.getElementById(`chip-${id}`);
+            if (chip) chip.remove();
+        }
+    }
+
+    async function sendBroadcast() {
+        const title = document.getElementById('compSubject').value.trim();
+        const message = document.getElementById('compBody').value.trim();
+        const btn = document.getElementById('sendMsgBtn');
+
+        const roles = Array.from(document.querySelectorAll('input[name="broadcast_role"]:checked')).map(cb => cb.value);
+        const groups = Array.from(document.querySelectorAll('input[name="portal_group"]:checked')).map(cb => cb.value);
+        const recipients = Array.from(selectedRecipients);
+
+        if (!title || !message) {
+            alert('Please enter both title and message.');
+            return;
+        }
+        if (roles.length === 0 && groups.length === 0 && recipients.length === 0) {
+            alert('Please select at least one recipient, role or portal group.');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+        try {
+            const res = await fetch("{% url 'group_portal:broadcast_send' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    title, message, roles, portal_groups: groups, recipients
+                })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                showToast(data.msg);
+                closeCompose();
+                // Reset form
+                document.getElementById('compSubject').value = '';
+                document.getElementById('compBody').value = '';
+                document.querySelectorAll('input[name="broadcast_role"]').forEach(cb => cb.checked = false);
+                document.querySelectorAll('input[name="portal_group"]').forEach(cb => cb.checked = false);
+                selectedRecipients.clear();
+                selectedBox.innerHTML = '';
+                
+                // Add to history too
+                prependActivity(`Broadcast: ${title}`);
+            } else {
+                alert(data.error || 'Failed to send broadcast');
+            }
+        } catch (err) {
+            alert('Error sending broadcast');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right: 8px;"></i> Send Broadcast';
+        }
+    }
+
+    function openCompose() {
+        document.getElementById('composeModal').classList.add('active');
+        drawerOverlay.classList.add('active');
+    }
+
+    function closeCompose() {
+        document.getElementById('composeModal').classList.remove('active');
+        if (!msgDrawer.classList.contains('active')) drawerOverlay.classList.remove('active');
+    }
+
+    function sendMessage() {
+        // Fallback for any legacy calls
+        sendBroadcast();
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,981 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+/* ══════════════════════════════════════════════
+   PREMIUM PROFILE EDIT PAGE
+══════════════════════════════════════════════ */
+:root {
+    --pro-primary: #2563eb;
+    --pro-primary-light: #eff6ff;
+    --pro-success: #10b981;
+    --pro-navy: #1e3a8a;
+    --pro-text: #1e293b;
+    --pro-muted: #64748b;
+    --pro-border: #e2e8f0;
+    --pro-bg: #f8fafc;
+    --pro-card: #ffffff;
+    --pro-radius: 20px;
+    --pro-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+
+/* Reset content padding to give us full control */
+#content {
+    padding: 30px 40px !important;
+    background: var(--pro-bg) !important;
+}
+
+/* Hide default admin clutter on this page */
+#content h1,
+.content-title,
+.object-tools,
+.breadcrumbs { display: none !important; }
+
+/* ── Page Wrapper ── */
+.profile-page-wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    font-family: 'Inter', 'Outfit', sans-serif;
+}
+
+/* ── HERO Banner ── */
+.profile-hero {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e3a8a 100%);
+    border-radius: var(--pro-radius);
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
+}
+
+.profile-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 250px; height: 250px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+}
+.profile-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: -30px;
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+}
+
+/* Avatar preview in hero */
+.hero-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.hero-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid rgba(255,255,255,0.4);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    display: block;
+}
+
+.hero-avatar-edit {
+    position: absolute;
+    bottom: 2px; right: 2px;
+    width: 30px; height: 30px;
+    background: var(--pro-success);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    border: 2px solid #fff;
+    transition: transform 0.2s;
+}
+
+.hero-avatar-edit:hover { transform: scale(1.1); }
+.hero-avatar-edit svg { width: 14px; height: 14px; color: #fff; }
+
+/* Hero text */
+.hero-text { z-index: 1; }
+
+.hero-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.1rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 6px 0;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.hero-email {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.7);
+    margin: 0 0 14px 0;
+}
+
+.hero-role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ── Form Grid Layout ── */
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.profile-grid-full {
+    grid-column: 1 / -1;
+}
+
+/* ── Card ── */
+.pro-card {
+    background: var(--pro-card);
+    border: 1px solid var(--pro-border);
+    border-radius: var(--pro-radius);
+    box-shadow: var(--pro-shadow);
+    overflow: hidden;
+}
+
+.pro-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--pro-border);
+    background: var(--pro-bg);
+}
+
+.pro-card-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+
+.pro-card-header h3 {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+    color: var(--pro-text) !important;
+    margin: 0 !important;
+}
+
+.pro-card-header p {
+    font-size: 0.78rem;
+    color: var(--pro-muted);
+    margin: 2px 0 0 0;
+}
+
+.pro-card-body {
+    padding: 24px;
+}
+
+/* ── Form Fields ── */
+.pro-field {
+    margin-bottom: 20px;
+}
+
+.pro-field:last-child { margin-bottom: 0; }
+
+.pro-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--pro-text);
+    margin-bottom: 8px;
+    letter-spacing: 0.01em;
+}
+
+.pro-input {
+    width: 100%;
+    height: 48px;
+    background: var(--pro-bg);
+    border: 1.5px solid var(--pro-border);
+    border-radius: 12px;
+    padding: 0 16px;
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+    color: var(--pro-text);
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.pro-textarea {
+    width: 100%;
+    background: var(--pro-bg);
+    border: 1.5px solid var(--pro-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+    color: var(--pro-text);
+    transition: all 0.2s;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 100px;
+}
+
+.pro-select {
+    width: 100%;
+    height: 48px;
+    background: var(--pro-bg);
+    border: 1.5px solid var(--pro-border);
+    border-radius: 12px;
+    padding: 0 40px 0 16px;
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+    color: var(--pro-text);
+    transition: all 0.2s;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+}
+
+.pro-input:focus, .pro-textarea:focus, .pro-select:focus {
+    border-color: var(--pro-primary);
+    background: #fff;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
+}
+
+/* ── Avatar Upload Field ── */
+.avatar-upload-zone {
+    border: 2px dashed var(--pro-border);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.avatar-upload-zone:hover {
+    border-color: var(--pro-primary);
+    background: var(--pro-primary-light);
+}
+
+.avatar-upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+.avatar-upload-icon {
+    width: 48px; height: 48px;
+    background: var(--pro-primary-light);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+    color: var(--pro-primary);
+}
+
+.avatar-upload-zone p {
+    font-size: 0.85rem;
+    color: var(--pro-muted);
+    margin: 0;
+}
+
+.avatar-upload-zone strong {
+    color: var(--pro-primary);
+    display: block;
+    font-size: 0.88rem;
+    margin-bottom: 4px;
+}
+
+/* ── Password field ── */
+.password-hint {
+    font-size: 0.78rem;
+    color: var(--pro-muted);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ── Submit Bar ── */
+.pro-submit-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--pro-card);
+    border: 1px solid var(--pro-border);
+    border-radius: var(--pro-radius);
+    padding: 20px 28px;
+    box-shadow: var(--pro-shadow);
+    margin-top: 24px;
+}
+
+.pro-submit-bar .left-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pro-btn-save {
+    height: 48px;
+    padding: 0 28px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s;
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pro-btn-save:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.4);
+}
+
+.pro-btn-secondary {
+    height: 48px;
+    padding: 0 20px;
+    background: var(--pro-bg);
+    color: var(--pro-muted);
+    border: 1.5px solid var(--pro-border);
+    border-radius: 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.pro-btn-secondary:hover {
+    border-color: var(--pro-primary);
+    color: var(--pro-primary);
+    background: var(--pro-primary-light);
+}
+
+/* Current avatar small thumb */
+.current-avatar-thumb {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--pro-border);
+    margin: 0 auto 12px;
+    display: block;
+}
+
+/* ── Error Messages ── */
+.pro-error {
+    color: #ef4444;
+    font-size: 0.78rem;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.errorlist li { color: #ef4444; font-size: 0.8rem; list-style: none; }
+
+/* ── Hero Info Button ── */
+.hero-info-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.18);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.hero-info-btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-1px);
+}
+
+/* ── Account Info Modal ── */
+.lip-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lip-modal.active {
+    visibility: visible;
+    opacity: 1;
+}
+
+.lip-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+}
+
+.lip-modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    transform: scale(0.9) translateY(20px);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.lip-modal.active .lip-modal-content {
+    transform: scale(1) translateY(0);
+}
+
+.lip-header {
+    background: linear-gradient(135deg, #2563eb, #1e3a8a);
+    color: #fff;
+    padding: 22px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lip-header h4 {
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.modal-close-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-close-btn:hover { background: rgba(255,255,255,0.25); transform: rotate(90deg); }
+
+.lip-body {
+    padding: 12px 28px 28px;
+}
+
+.lip-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 0;
+    border-bottom: 1.5px solid #f1f5f9;
+}
+
+.lip-row:last-child { border-bottom: none; }
+
+.lip-icon-box {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: #f8fafc;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    border: 1px solid #e2e8f0;
+}
+
+.lip-info { flex: 1; }
+
+.lip-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+}
+
+.lip-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* ── Password Toggle Button ── */
+.pw-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    background: linear-gradient(135deg, #2563eb, #1e3a8a);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+.pw-toggle-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+}
+
+/* ── Recent History Section ── */
+.history-section {
+    margin-top: 10px;
+    padding: 24px 28px 28px;
+    border-top: 2px dashed #f1f5f9;
+    max-height: 280px;
+    overflow-y: auto;
+}
+.history-section::-webkit-scrollbar { width: 6px; }
+.history-section::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+.history-section h5 {
+    margin: 0 0 16px 0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s;
+}
+.history-item:hover { transform: scale(1.01); background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+
+.hi-left { display: flex; align-items: center; gap: 12px; }
+.hi-icon { 
+    width: 32px; height: 32px; 
+    border-radius: 8px; 
+    background: #fff; 
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #e2e8f0;
+    font-size: 1.1rem;
+}
+.hi-content { display: flex; flex-direction: column; }
+.hi-time { font-size: 0.82rem; font-weight: 700; color: #1e293b; }
+.hi-ip { font-size: 0.68rem; font-weight: 600; color: #94a3b8; font-family: monospace; }
+.hi-badge {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #dbeafe;
+    text-transform: uppercase;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .profile-grid { grid-template-columns: 1fr; }
+    #content { padding: 16px !important; }
+}
+</style>
+{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content %}
+<div class="profile-page-wrap">
+    {% csrf_token %}
+
+    <!-- ══ HERO SECTION ══ -->
+    <div class="profile-hero">
+        <div class="hero-avatar-wrap">
+            {% if original.avatar %}
+                <img src="{{ original.avatar.url }}" alt="Avatar" class="hero-avatar" id="heroAvatarPreview">
+            {% else %}
+                <img src="{% static 'admin/custom/profile_ashik.png' %}" alt="Avatar" class="hero-avatar" id="heroAvatarPreview">
+            {% endif %}
+            <label for="id_avatar" class="hero-avatar-edit" title="Change photo">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </label>
+        </div>
+
+        <div class="hero-text">
+            <h2 class="hero-name">
+                {{ original.get_full_name|default:original.username }}
+            </h2>
+            <p class="hero-email">{{ original.email }}</p>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span class="hero-role-badge">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg>
+                    {{ original.get_role_display|default:"Admin" }}
+                </span>
+
+                <div class="hero-info-wrap">
+                    <button type="button" class="hero-info-btn" onclick="toggleLoginInfo()" id="loginInfoBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M11 9h2V7h-2v2zm0 8h2v-6h-2v6zm1-18C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+                        Account Info
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ACCOUNT INFO MODAL ══ -->
+    <div class="lip-modal" id="loginInfoModal">
+        <div class="lip-modal-overlay" onclick="toggleLoginInfo()"></div>
+        <div class="lip-modal-content">
+            <div class="lip-header">
+                <h4>Admin Account Details</h4>
+                <button type="button" class="modal-close-btn" onclick="toggleLoginInfo()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="lip-body">
+                <div class="lip-row">
+                    <div class="lip-icon-box" style="color: #6366f1; background: #eef2ff;">🕐</div>
+                    <div class="lip-info">
+                        <div class="lip-label">Last Login Date</div>
+                        <div class="lip-value">{{ original.last_login|date:"M d, Y · h:i A"|default:"Never" }}</div>
+                    </div>
+                </div>
+                <div class="lip-row">
+                    <div class="lip-icon-box" style="color: #10b981; background: #ecfdf5;">📅</div>
+                    <div class="lip-info">
+                        <div class="lip-label">Member Since</div>
+                        <div class="lip-value">{{ original.date_joined|date:"M d, Y"|default:"—" }}</div>
+                    </div>
+                </div>
+                <div class="lip-row">
+                    <div class="lip-icon-box" style="color: #f59e0b; background: #fffbeb;">🛡️</div>
+                    <div class="lip-info">
+                        <div class="lip-label">Account Status</div>
+                        <div class="lip-value" style="color:{% if original.is_active %}#10b981{% else %}#ef4444{% endif %};">
+                            {% if original.is_active %}Verified active{% else %}Inactive{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="lip-row">
+                    <div class="lip-icon-box" style="color: #3b82f6; background: #eff6ff;">📧</div>
+                    <div class="lip-info">
+                        <div class="lip-label">Contact Email</div>
+                        <div class="lip-value">{{ original.email|default:"N/A" }}</div>
+                    </div>
+                </div>
+                <div class="lip-row" style="border-bottom: none;">
+                    <div class="lip-icon-box" style="color: #8b5cf6; background: #f5f3ff;">👤</div>
+                    <div class="lip-info">
+                        <div class="lip-label">Primary Username</div>
+                        <div class="lip-value">{{ original.username }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ RECENT LOGINS SECTION ══ -->
+            <div class="history-section">
+                <h5>Recent Activity Log</h5>
+                <div class="history-list">
+                    {% if login_history %}
+                        {% for entry in login_history %}
+                        <div class="history-item">
+                            <div class="hi-left">
+                                <div class="hi-icon">🚀</div>
+                                <div class="hi-content">
+                                    <div class="hi-time">{{ entry.timestamp|date:"M d, Y · h:i A" }}</div>
+                                    <div class="hi-ip">IP: {{ entry.ip_address|default:"Unknown" }}</div>
+                                </div>
+                            </div>
+                            <div class="hi-badge">
+                                {% if "iPhone" in entry.user_agent or "Android" in entry.user_agent %}
+                                    Mobile
+                                {% elif "Windows" in entry.user_agent %}
+                                    Windows
+                                {% elif "Macintosh" in entry.user_agent %}
+                                    MacOS
+                                {% else %}
+                                    Web
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="font-size: 0.8rem; color: #94a3b8; text-align: center; padding: 20px;">No recent history available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="profileForm">
+        {% csrf_token %}
+        <input type="hidden" name="_save" value="1">
+
+        <div class="profile-grid">
+
+            <!-- ══ PERSONAL INFO CARD ══ -->
+            <div class="pro-card profile-grid-full">
+                <div class="pro-card-header">
+                    <div class="pro-card-icon" style="background: #ede9fe; color: #7c3aed;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg>
+                    </div>
+                    <div>
+                        <h3>Personal Information</h3>
+                        <p>Update your name and account credentials</p>
+                    </div>
+                </div>
+                <div class="pro-card-body">
+                    <div class="profile-grid">
+                        <div class="pro-field">
+                            <label class="pro-label" for="id_first_name">First Name</label>
+                            <input type="text" name="first_name" id="id_first_name" class="pro-input"
+                                   value="{{ original.first_name }}" placeholder="e.g. Ashik">
+                        </div>
+                        <div class="pro-field">
+                            <label class="pro-label" for="id_last_name">Last Name</label>
+                            <input type="text" name="last_name" id="id_last_name" class="pro-input"
+                                   value="{{ original.last_name }}" placeholder="e.g. Hasan">
+                        </div>
+                        <div class="pro-field">
+                            <label class="pro-label" for="id_email">Email Address</label>
+                            <input type="email" name="email" id="id_email" class="pro-input"
+                                   value="{{ original.email }}" placeholder="admin@pawhub.com">
+                        </div>
+                        <div class="pro-field">
+                            <label class="pro-label" for="id_username">Username</label>
+                            <input type="text" name="username" id="id_username" class="pro-input"
+                                   value="{{ original.username }}" placeholder="username">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ PROFILE PHOTO CARD ══ -->
+            <div class="pro-card">
+                <div class="pro-card-header">
+                    <div class="pro-card-icon" style="background: #dcfce7; color: #16a34a;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                    </div>
+                    <div>
+                        <h3>Profile Photo</h3>
+                        <p>Upload a new profile avatar</p>
+                    </div>
+                </div>
+                <div class="pro-card-body">
+                    {% if original.avatar %}
+                        <img src="{{ original.avatar.url }}" class="current-avatar-thumb" alt="Current avatar">
+                    {% else %}
+                        <img src="{% static 'admin/custom/profile_ashik.png' %}" class="current-avatar-thumb" alt="Default avatar">
+                    {% endif %}
+                    <div class="avatar-upload-zone">
+                        <input type="file" name="avatar" id="id_avatar" accept="image/*" onchange="previewAvatar(this)">
+                        <div class="avatar-upload-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                        </div>
+                        <strong>Click to upload a photo</strong>
+                        <p>PNG, JPG or WEBP · Max 5MB</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ ACCOUNT SETTINGS CARD ══ -->
+            <div class="pro-card">
+                <div class="pro-card-header">
+                    <div class="pro-card-icon" style="background: #fff7ed; color: #ea580c;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                    </div>
+                    <div>
+                        <h3>Role & Contact</h3>
+                        <p>Manage your role and contact details</p>
+                    </div>
+                </div>
+                <div class="pro-card-body">
+                    <div class="pro-field">
+                        <label class="pro-label" for="id_role">Role</label>
+                        <select name="role" id="id_role" class="pro-select">
+                            <option value="owner" {% if original.role == 'owner' %}selected{% endif %}>Pet Owner</option>
+                            <option value="shelter_staff" {% if original.role == 'shelter_staff' %}selected{% endif %}>Shelter Staff</option>
+                            <option value="seller" {% if original.role == 'seller' %}selected{% endif %}>Pet Product Seller</option>
+                            <option value="admin" {% if original.role == 'admin' %}selected{% endif %}>Admin</option>
+                            <option value="doctor" {% if original.role == 'doctor' %}selected{% endif %}>Veterinary Doctor</option>
+                        </select>
+                    </div>
+                    <div class="pro-field">
+                        <label class="pro-label" for="id_phone">Phone Number</label>
+                        <input type="text" name="phone" id="id_phone" class="pro-input"
+                               value="{{ original.phone }}" placeholder="+1 234 567 8900">
+                    </div>
+                    <div class="pro-field">
+                        <label class="pro-label" for="id_location">Location</label>
+                        <input type="text" name="location" id="id_location" class="pro-input"
+                               value="{{ original.location }}" placeholder="e.g. Dhaka, Bangladesh">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ BIO CARD ══ -->
+            <div class="pro-card profile-grid-full">
+                <div class="pro-card-header">
+                    <div class="pro-card-icon" style="background: #e0f2fe; color: #0284c7;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                    </div>
+                    <div>
+                        <h3>Bio</h3>
+                        <p>A short description about yourself</p>
+                    </div>
+                </div>
+                <div class="pro-card-body">
+                    <div class="pro-field" style="margin-bottom: 0;">
+                        <textarea name="bio" id="id_bio" class="pro-textarea" placeholder="Tell us a bit about yourself...">{{ original.bio }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ SECURITY CARD (Collapsible) ══ -->
+            <div class="pro-card profile-grid-full" id="pwCard">
+                <div class="pro-card-header" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="pro-card-icon" style="background: #fce7f3; color: #be185d;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        </div>
+                        <div>
+                            <h3>Security</h3>
+                            <p>Manage your account password</p>
+                        </div>
+                    </div>
+                    <button type="button" class="pw-toggle-btn" id="pwToggleBtn" onclick="togglePasswordSection()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        Change Password
+                    </button>
+                </div>
+                <div class="pro-card-body" id="pwFields" style="display: none;">
+                    <div class="profile-grid">
+                        <div class="pro-field">
+                            <label class="pro-label" for="id_password1">New Password</label>
+                            <input type="password" name="password1" id="id_password1" class="pro-input" placeholder="••••••••••">
+                            <p class="password-hint">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                Min 8 characters with letters &amp; numbers
+                            </p>
+                        </div>
+                        <div class="pro-field">
+                            <label class="pro-label" for="id_password2">Confirm New Password</label>
+                            <input type="password" name="password2" id="id_password2" class="pro-input" placeholder="••••••••••">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ══ SUBMIT BAR ══ -->
+        <div class="pro-submit-bar">
+            <a href="{% url 'admin:index' %}" class="pro-btn-secondary">
+                ← Back to Dashboard
+            </a>
+            <div class="left-actions">
+                <button type="submit" name="_save" class="pro-btn-save">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+// ── Avatar preview ──
+function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('heroAvatarPreview').src = e.target.result;
+            const thumbs = document.querySelectorAll('.current-avatar-thumb');
+            thumbs.forEach(t => t.src = e.target.result);
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// ── Password collapsible ──
+function togglePasswordSection() {
+    const fields = document.getElementById('pwFields');
+    const btn   = document.getElementById('pwToggleBtn');
+    if (fields.style.display === 'none') {
+        fields.style.display = 'block';
+        btn.style.background = 'linear-gradient(135deg,#be185d,#9d174d)';
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> Cancel`;
+    } else {
+        fields.style.display = 'none';
+        btn.style.background = '';
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg> Change Password`;
+    }
+}
+
+// ── Login info Modal ──
+function toggleLoginInfo() {
+    const modal = document.getElementById('loginInfoModal');
+    modal.classList.toggle('active');
+    
+    // Toggle body scroll
+    if (modal.classList.contains('active')) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
+}
+</script>
+{% endblock %}

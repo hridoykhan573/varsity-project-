@@ -1,0 +1,219 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{% static 'admin/css/changelists.css' %}">
+  <style>
+    /* Styling for the specific Buyers table */
+    .buyers-table th { padding: 16px !important; }
+    .buyers-table td { padding: 14px 16px !important; vertical-align: middle; }
+    .contact-info p { margin: 2px 0; font-size: 0.85rem; color: #475569; }
+    .contact-info strong { color: #1e293b; font-weight: 600; }
+    
+    .purchase-badge {
+        display: inline-block;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #334155;
+    }
+    
+    /* Clean avatar simulation (reuse core styles) */
+    .avatar-cell { display: flex; align-items: center; gap: 12px; }
+    
+    /* Modern Search Bar */
+    .modern-search-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .modern-search-wrapper .search-input {
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 8px 12px 8px 36px;
+        background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E") no-repeat 10px center;
+        width: 280px;
+        font-size: 0.9rem;
+        color: #1e293b;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .modern-search-wrapper .search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .modern-search-wrapper .search-btn {
+        background: #0f172a;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        height: 35px;
+    }
+    .modern-search-wrapper .search-btn:hover {
+        background: #1e293b;
+    }
+    
+    /* Premium Happy Sort Dropdown */
+    .happy-select {
+        appearance: none;
+        background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 14px center;
+        border: 1px solid #cbd5e1;
+        padding: 8px 40px 8px 16px;
+        border-radius: 999px; /* Fully rounded pill */
+        font-size: 0.9rem;
+        line-height: normal;
+        height: 38px !important;
+        box-sizing: border-box;
+        font-weight: 500;
+        color: #334155;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        transition: all 0.2s ease;
+    }
+    .happy-select:hover {
+        border-color: #94a3b8;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+    }
+    .happy-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+  </style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_label|capfirst }}</a>
+&rsaquo; <a href="{% url 'admin:products_product_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; <a href="{% url 'admin:products_product_change' product.pk %}">{{ product.name|truncatewords:"18" }}</a>
+&rsaquo; Buyers
+</div>
+{% endblock %}
+
+{% block content_title %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    {% if title %}<h1 style="margin:0; font-size: 1.5rem; color: #0f172a; font-weight: 700;">{{ title }}</h1>{% endif %}
+    
+    <form method="get" class="modern-search-wrapper">
+        <input type="text" name="q" value="{{ search_query }}" class="search-input" autofocus placeholder="Search user email, name, phone...">
+        
+        <select name="sort" class="happy-select" onchange="this.form.submit()">
+            <option value="newest" {% if sort_param == 'newest' %}selected{% endif %}>Sort by Newest</option>
+            <option value="oldest" {% if sort_param == 'oldest' %}selected{% endif %}>Sort by Oldest</option>
+            <option value="name_asc" {% if sort_param == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+            <option value="name_desc" {% if sort_param == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+            <option value="qty_high" {% if sort_param == 'qty_high' %}selected{% endif %}>Highest Qty</option>
+            <option value="qty_low" {% if sort_param == 'qty_low' %}selected{% endif %}>Lowest Qty</option>
+            <option value="price_high" {% if sort_param == 'price_high' %}selected{% endif %}>Highest Price</option>
+            <option value="price_low" {% if sort_param == 'price_low' %}selected{% endif %}>Lowest Price</option>
+            <option value="status" {% if sort_param == 'status' %}selected{% endif %}>Delivery Status</option>
+            <option value="payment" {% if sort_param == 'payment' %}selected{% endif %}>Payment Status</option>
+            <option value="location" {% if sort_param == 'location' %}selected{% endif %}>Location</option>
+        </select>
+
+        <button type="submit" class="search-btn">Search</button>
+        {% if search_query %}
+          <span style="font-size: 0.85rem; color: #64748b; margin-left: 4px;">
+            {{ purchases.count }} found (<a href="?{% if sort_param %}sort={{ sort_param }}{% endif %}" style="color: #ef4444; font-weight: 600;">clear</a>)
+          </span>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}
+
+{% block content %}
+  <div id="content-main">
+    <div class="module" id="changelist">
+
+      <div class="results">
+        <table id="result_list" class="buyers-table" style="width: 100%; table-layout: fixed;">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 30%;">
+                <div class="text"><span>Buyer Profile</span></div>
+              </th>
+              <th scope="col" style="width: 35%;">
+                <div class="text"><span>Contact & Shipping</span></div>
+              </th>
+              <th scope="col" style="width: 20%;">
+                <div class="text"><span>Purchase Details</span></div>
+              </th>
+              <th scope="col" style="width: 15%;">
+                <div class="text"><span>Date</span></div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in purchases %}
+            <tr class="{% cycle 'row1' 'row2' %}">
+              <td class="field-user">
+                  <div class="avatar-cell">
+                      {% if item.order.user.avatar %}
+                      <span class="admin-user-avatar">
+                          <img src="{{ item.order.user.avatar.url }}" alt="" loading="lazy" width="40" height="40">
+                      </span>
+                      {% else %}
+                      <span class="admin-user-avatar admin-user-avatar--placeholder admin-user-avatar--ph1">
+                          {{ item.order.user.username|make_list|first|upper }}
+                      </span>
+                      {% endif %}
+                      <div class="admin-user-cell__meta">
+                          <a href="{% url 'admin:accounts_customuser_change' item.order.user.pk %}" class="admin-user-cell__name" style="color: #1d4ed8; text-decoration: none;">
+                              {{ item.order.user.get_full_name|default:item.order.user.username }}
+                          </a>
+                          <span class="admin-user-cell__sub">
+                              <span class="admin-user-cell__email">{{ item.order.user.email }}</span>
+                          </span>
+                      </div>
+                  </div>
+              </td>
+              <td class="field-contact">
+                <div class="contact-info">
+                    <p><strong>Phone:</strong> {{ item.order.contact_phone }}</p>
+                    <p><strong>Address:</strong> {{ item.order.home_address }} {% if item.order.road_number %}, {{ item.order.road_number }}{% endif %}</p>
+                </div>
+              </td>
+              <td class="field-purchase">
+                  <div style="margin-bottom: 6px;">
+                      <span class="purchase-badge">Qty: {{ item.quantity }}</span>
+                      <span class="purchase-badge" style="margin-left: 4px;">৳ {{ item.price_at_purchase }} ea</span>
+                  </div>
+                  <div>
+                    <span class="status-pill status-{{ item.order.status }}">{{ item.order.get_status_display }}</span>
+                    {% if item.order.payment_status == 'paid' %}
+                    <span class="status-pill" style="background:var(--dash-success-bg); color:var(--dash-success-txt);">Paid</span>
+                    {% else %}
+                    <span class="status-pill" style="background:#fff7ed; color:#c2410c; border: 1px solid #ffedd5;">Unpaid</span>
+                    {% endif %}
+                  </div>
+              </td>
+              <td class="field-date">
+                  <span style="color: #64748b; font-size: 0.85rem; font-weight: 500;">
+                      {{ item.order.created_at|date:"M d, Y" }} <br>
+                      {{ item.order.created_at|time:"h:i A" }}
+                  </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="text-align: center; padding: 40px !important; color: #64748b;">
+                  No users have purchased this product yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

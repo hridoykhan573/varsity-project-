@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PawHub Auth | Forgot Password</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #1e40af;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: var(--card);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        p {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            color: #475569;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--secondary);
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        #message {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .success { background: #dcfce7; color: #166534; }
+        .error { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🔐 Reset Password</h1>
+        
+        <!-- Step 1: Send OTP -->
+        <div id="step1" class="step active">
+            <p>Enter your registered email to receive a 5-digit verification code.</p>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="email" placeholder="name@example.com">
+            </div>
+            <button onclick="sendOTP()">Send Verification Code</button>
+        </div>
+
+        <!-- Step 2: Verify OTP -->
+        <div id="step2" class="step">
+            <p>We've sent a 5-digit code to your email. Enter it below.</p>
+            <div class="form-group">
+                <label>Verification Code</label>
+                <input type="text" id="otp" maxlength="5" placeholder="12345" style="text-align: center; letter-spacing: 5px; font-weight: bold;">
+            </div>
+            <button onclick="verifyOTP()">Verify Code</button>
+        </div>
+
+        <!-- Step 3: New Password -->
+        <div id="step3" class="step">
+            <p>Success! Now set a new secure password for your account.</p>
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="newPassword" placeholder="••••••••">
+            </div>
+            <button onclick="resetPassword()">Reset Password</button>
+        </div>
+
+        <div id="message"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/auth';
+        let savedEmail = '';
+        let savedOTP = '';
+
+        function showMessage(text, type) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.textContent = text;
+            msgDiv.className = type;
+            msgDiv.style.display = 'block';
+        }
+
+        async function sendOTP() {
+            const email = document.getElementById('email').value;
+            if (!email) return showMessage('Please enter an email', 'error');
+
+            try {
+                const res = await fetch(`${API_BASE}/forgot-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    savedEmail = email;
+                    document.getElementById('step1').classList.remove('active');
+                    document.getElementById('step2').classList.add('active');
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.error || 'Something went wrong', 'error');
+                }
+            } catch (e) {
+                showMessage('Connection error', 'error');
+            }
+        }
+
+        async function verifyOTP() {
+            const otp = document.getElementById('otp').value;
+            if (!otp) return showMessage('Please enter the OTP', 'error');
+
+            try {
+                const res = await fetch(`${API_BASE}/verify-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: savedEmail, otp })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    savedOTP = otp;
+                    document.getElementById('step2').classList.remove('active');
+                    document.getElementById('step3').classList.add('active');
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.error || 'Invalid OTP', 'error');
+                }
+            } catch (e) {
+                showMessage('Connection error', 'error');
+            }
+        }
+
+        async function resetPassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            if (newPassword.length < 6) return showMessage('Password must be at least 6 characters', 'error');
+
+            try {
+                const res = await fetch(`${API_BASE}/reset-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: savedEmail, otp: savedOTP, newPassword })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage(data.message, 'success');
+                    setTimeout(() => window.location.reload(), 3000);
+                } else {
+                    showMessage(data.error || 'Failed to reset password', 'error');
+                }
+            } catch (e) {
+                showMessage('Connection error', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

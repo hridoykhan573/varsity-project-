@@ -1,0 +1,261 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* ══════ FULL-VIEWPORT SPLIT LOGIN ══════ */
+    :root {
+        --login-primary: #ff7e33;
+        --login-bg: #f8fafc;
+        --login-text: #1b2559;
+        --login-gray: #64748b;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+        font-family: 'Inter', sans-serif;
+        overflow: hidden;
+    }
+
+    /* Hide default admin elements aggressively */
+    #header, .breadcrumbs, #footer, #content-title, .content-title { 
+        display: none !important; 
+    }
+    
+    /* Remove default Django content padding/margins */
+    #content {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Full screen split container */
+    .login-viewport-split {
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+    }
+
+    /* Left Side: Orange Panel */
+    .login-left-side {
+        flex: 1;
+        background: var(--login-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        color: #ffffff;
+        text-align: center;
+    }
+
+    .login-content-wrapper {
+        max-width: 600px;
+    }
+
+    .login-left-side h2 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2.4rem;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 12px;
+    }
+
+    .login-left-side p {
+        font-size: 1.05rem;
+        opacity: 0.9;
+        margin-bottom: 20px;
+    }
+
+    .login-img {
+        width: auto;
+        max-width: 500px;
+        max-height: 45vh; /* Smart vertical constraint */
+        height: auto;
+        object-fit: contain;
+        filter: drop-shadow(0 25px 40px rgba(0,0,0,0.18));
+    }
+
+    /* Right Side: White Panel */
+    .login-right-side {
+        flex: 1;
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+    }
+
+    .login-box {
+        width: 100%;
+        max-width: 340px;
+    }
+
+    .login-branding {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 32px;
+    }
+
+    .login-branding span {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: var(--login-text);
+    }
+
+    .login-right-side h1 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--login-text);
+        margin: 0 0 8px 0;
+    }
+
+    .login-right-side .subtitle {
+        color: var(--login-gray);
+        margin-bottom: 32px;
+        font-size: 0.95rem;
+    }
+
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--login-text);
+        margin-bottom: 8px;
+    }
+
+    .input-wrapper input {
+        width: 100%;
+        height: 52px;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0 16px;
+        font-size: 1rem;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+
+    .input-wrapper input:focus {
+        border-color: var(--login-primary);
+        background: #fff;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(255, 126, 51, 0.1);
+    }
+
+    .login-btn {
+        width: 100%;
+        height: 54px;
+        background: var(--login-primary);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.2);
+    }
+
+    .login-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 20px 25px -5px rgba(234, 88, 12, 0.3);
+    }
+
+    .errornote {
+        background: #fee2e2;
+        color: #ef4444;
+        padding: 12px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .login-viewport-split { flex-direction: column; overflow-y: auto; }
+        .login-left-side { padding: 40px 20px; }
+        .login-right-side { padding: 40px 20px; }
+        .login-box { max-width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} login{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content %}
+<div class="login-viewport-split">
+    <!-- Left Side -->
+    <div class="login-left-side">
+        <div class="login-content-wrapper">
+            <h2>Simplify Management.</h2>
+            <p>Central control for your petcare ecosystem. Modern, efficient, and direct.</p>
+            <img src="{% static 'admin/custom/admin_login_illustration.png' %}" alt="Illustration" class="login-img">
+        </div>
+    </div>
+
+    <!-- Right Side -->
+    <div class="login-right-side">
+        <div class="login-box">
+            <div class="login-branding">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="var(--login-primary)">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-3.5L8 13l3-4V6.5L16 11l-5 5.5z"/>
+                </svg>
+                <span>PawHub Admin</span>
+            </div>
+
+            <h1>Welcome</h1>
+            <p class="subtitle">Please login to continue</p>
+
+            {% if form.errors and not form.non_field_errors %}
+                <p class="errornote">{% blocktrans count counter=form.errors.items|length %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktrans %}</p>
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <p class="errornote">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+
+            <form action="{{ app_path }}" method="post" id="login-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_username">Username/Email</label>
+                    <div class="input-wrapper">
+                        <input type="text" name="username" id="id_username" placeholder="Enter your credentials" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" name="password" id="id_password" placeholder="••••••••" required autocomplete="current-password">
+                    </div>
+                    {% url 'admin_password_reset' as password_reset_url %}
+                    {% if password_reset_url %}
+                    <div style="text-align: right; margin-top: 8px;">
+                        <a href="{{ password_reset_url }}" style="font-size: 0.8rem; color: var(--login-gray); text-decoration: none;">Forgot password?</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <input type="hidden" name="next" value="{{ next }}">
+                <button type="submit" class="login-btn">Login to Command Center</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

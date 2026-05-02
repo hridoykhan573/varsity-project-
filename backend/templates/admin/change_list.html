@@ -1,0 +1,45 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block search %}
+<div class="happy-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 20px; width: 100%; margin: 0 auto 24px;">
+    <div style="flex: 1; max-width: 520px;">
+        {{ block.super }}
+    </div>
+    
+    <div class="happy-sort-container">
+        <div class="happy-select-wrapper" id="happy-sort-wrapper">
+            <div class="happy-select-trigger" id="happy-sort-trigger">
+                <span id="happy-sort-label" style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-3 3-3-3"/><path d="m15 6-3-3-3 3"/><path d="M12 3v18"/></svg>
+                    Sort by Default
+                </span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+            <div class="happy-select-options" id="happy-sort-options">
+                <!-- SmartSorter JS engine will populate this based on visible columns -->
+            </div>
+        </div>
+
+        <!-- ══════ PREMIUM PDF DOWNLOAD BUTTON ══════ -->
+        <button
+            type="button"
+            id="adminPdfDownloadBtn"
+            class="admin-pdf-btn"
+            onclick="downloadAdminPDF()"
+            title="Export visible table as PDF"
+        >
+            <span class="admin-pdf-btn__glow"></span>
+            <span class="admin-pdf-btn__inner">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/>
+                    <polyline points="9,15 12,18 15,15"/>
+                </svg>
+                Download PDF
+            </span>
+        </button>
+    </div>
+</div>
+{% endblock %}

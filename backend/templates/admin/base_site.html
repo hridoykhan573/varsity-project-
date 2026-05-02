@@ -1,0 +1,1713 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | PawHub Admin Command Center{% endblock %}
+
+{% block branding %}
+<div id="branding" style="padding: 0; margin: 0; display: flex; align-items: center; gap: 24px;">
+    <!-- Quick Profile Badge -->
+    <a href="{% url 'admin:accounts_customuser_change' user.id %}" class="admin-quick-profile" title="Edit Profile Settings">
+        <div class="profile-thumb-wrapper">
+            <img src="{% if user.avatar %}{{ user.avatar.url }}{% else %}{% static 'admin/custom/profile_ashik.png' %}{% endif %}" alt="Profile" class="profile-thumb-img">
+        </div>
+        <span class="profile-name-label" style="color: #ffffff !important; font-weight: 800; font-size: 1.05rem;">{{ user.get_full_name|default:user.username|truncatechars:18 }}</span>
+    </a>
+
+    <h1 id="site-name" style="margin: 0; padding: 0;">
+        <a href="{% url 'admin:index' %}"
+            style="display: flex; flex-direction: column; text-decoration: none; padding: 0; margin: 0;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 2px;">
+                <svg width="26" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 11c-1.657 0-3 1.567-3 3.5s1.343 3.5 3 3.5 3-1.567 3-3.5-1.343-3.5-3-3.5zM7.5 10c0-1.381-1.119-2.5-2.5-2.5S2.5 8.619 2.5 10s1.119 2.5 2.5 2.5S7.5 11.381 7.5 10zm11.5-2.5c-1.381 0-2.5 1.119-2.5 2.5s1.119 2.5 2.5 2.5 2.5-1.119 2.5-2.5-1.119-2.5-2.5-2.5zM12 2c1.381 0 2.5 1.119 2.5 2.5S13.381 7 12 7s-2.5-1.119-2.5-2.5S10.619 2 12 2z"
+                        fill="#1b2559" />
+                </svg>
+                <span
+                    style="font-weight: 800; font-family: 'Outfit', sans-serif; font-size: 1.85rem; color: #1b2559; letter-spacing: -0.04em;">Paw<span
+                        style="color: #10b981;">Hub</span> Admin</span>
+            </div>
+            <span
+                style="font-size: 0.88rem; font-weight: 500; font-family: 'Inter', sans-serif; color: #64748b; margin-left: 38px; letter-spacing: 0.01em; opacity: 0.9;">petcare
+                ecosystem • central control</span>
+        </a>
+    </h1>
+</div>
+{% endblock %}
+
+{# Hide "Welcome, user@email" — keep only action links #}
+{% block welcome-msg %}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/custom_admin.css' %}?v=2.2" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+<!-- jsPDF + AutoTable for PDF Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+    #header {
+        height: 100px;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        background: var(--bg-header) !important;
+        border-bottom: 1px solid var(--border-header) !important;
+        padding: 10px 40px 0 !important;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05) !important;
+        position: relative !important;
+    }
+
+    #branding {
+        margin-top: 5px !important;
+    }
+
+    #user-tools {
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 20px !important;
+        font-weight: 600 !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.95rem !important;
+        color: #64748b !important;
+        text-transform: none !important;
+    }
+
+    #user-tools a {
+        color: #3b82f6 !important;
+        text-decoration: none !important;
+        transition: color 0.2s !important;
+        border: none !important;
+        background: transparent !important;
+    }
+
+    #user-tools a:hover {
+        color: #1d4ed8 !important;
+    }
+
+    #user-tools .bracket {
+        display: none !important;
+    }
+
+    :root {
+        --bg-header: #ffffff;
+        --border-header: #e2e8f0;
+        --admin-primary: #3b82f6;
+    }
+
+    /* Status Badge Refinement matching Screenshot */
+    .status-pill,
+    .status-badge {
+        padding: 5px 16px !important;
+        border-radius: 6px !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        display: inline-block !important;
+        border-width: 1px !important;
+        border-style: solid !important;
+    }
+
+    .status-active,
+    .status-accepted {
+        background: #F0FDF4 !important;
+        color: #16A34A !important;
+        border-color: #BBF7D0 !important;
+    }
+
+    .status-inactive,
+    .status-rejected {
+        background: #F1F5F9 !important;
+        color: #475569 !important;
+        border-color: #E2E8F0 !important;
+    }
+
+    /* Hide standard action columns */
+    .action-checkbox,
+    .column-action-checkbox,
+    .actions {
+        display: none !important;
+    }
+
+    /* Force light mode on table header hover */
+    thead th.sortable:hover,
+    thead th.sortable a:hover,
+    thead th.sortable a:focus,
+    .results table thead th.sortable:hover,
+    .results table thead th.sortable a:hover,
+    .results table thead th.sortable a:focus {
+        background: #f8fafc !important;
+        color: #3b82f6 !important;
+    }
+
+    /* Premium Medium Search Bar */
+    #toolbar {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 14px !important;
+        padding: 16px 24px !important;
+        margin-bottom: 24px !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    #changelist-search {
+        width: 100% !important;
+        max-width: 600px !important;
+        margin-bottom: 0 !important;
+    }
+
+    #changelist-search div {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+
+    /* Hide redundant search labels/images from default Django Admin */
+    #changelist-search label,
+    #changelist-search img,
+    #changelist-search label img {
+        display: none !important;
+    }
+
+    #searchbar {
+        flex: 1 !important;
+        /* Let the search bar take up the available width */
+        height: 44px !important;
+        border: 1.5px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        padding: 0 16px 0 42px !important;
+        font-size: 0.9rem !important;
+        font-weight: 500 !important;
+        color: #1e293b !important;
+        width: 100% !important;
+        background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E") no-repeat 14px center !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    #searchbar:focus {
+        border-color: #3b82f6 !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
+        outline: none !important;
+    }
+
+    #changelist-search input[type="submit"] {
+        height: 44px !important;
+        background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 0 24px !important;
+        font-size: 0.85rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.03em !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2) !important;
+    }
+
+    #changelist-search input[type="submit"]:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 6px 15px rgba(59, 130, 246, 0.3) !important;
+        filter: brightness(1.1) !important;
+    }
+
+    /* Clean up the info text (e.g. "5 results") */
+    .quiet {
+        font-size: 0.78rem !important;
+        color: #94a3b8 !important;
+        margin-left: 8px !important;
+    }
+
+    /* GLOBAL HAPPY SORTING UI */
+    .happy-sort-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-left: auto;
+        padding-right: 4px;
+    }
+
+    .happy-select-wrapper {
+        position: relative;
+        min-width: 180px;
+        z-index: 100;
+    }
+
+    .happy-select-trigger {
+        height: 44px;
+        background: #ffffff;
+        border: 1.5px solid #3b82f6;
+        border-radius: 12px;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        color: #1b2559;
+        font-size: 0.95rem;
+    }
+
+    .happy-select-trigger:hover {
+        background: #f0f7ff;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    }
+
+    .happy-select-options {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: 100%;
+        min-width: 220px;
+        background: #ffffff;
+        border-radius: 14px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        display: none;
+        overflow: hidden;
+        padding: 6px;
+    }
+
+    .happy-option {
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .happy-option:hover {
+        background: #f1f5f9;
+        color: #3b82f6;
+        transform: translateX(3px);
+    }
+
+    .happy-option.active {
+        background: #eff6ff;
+        color: #3b82f6;
+    }
+
+    /* Hide default sorting links in table headers to force use of the dropdown */
+    /* Note: Keeping them functional but making them visually distinct if needed */
+    .results table thead th .text a {
+        color: #1b2559 !important;
+        text-decoration: none !important;
+    }
+
+    /* REAL-TIME SUGGESTIONS UI */
+    .search-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        margin-top: 8px;
+        padding: 8px;
+        display: none;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .suggestion-item {
+        padding: 10px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.2s;
+    }
+
+    .suggestion-item:hover {
+        background: #f1f5f9;
+        transform: translateX(4px);
+    }
+
+    .suggestion-type {
+        font-size: 0.65rem;
+        background: #e2e8f0;
+        color: #64748b;
+        padding: 2px 6px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        font-weight: 800;
+    }
+
+    .suggestion-val {
+        font-size: 0.88rem;
+        color: #1e293b;
+        font-weight: 600;
+    }
+
+    /* ══════ PREMIUM PDF DOWNLOAD BUTTON ══════ */
+    .admin-pdf-btn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 44px;
+        padding: 0 22px;
+        border: none;
+        border-radius: 999px;
+        cursor: pointer;
+        font-family: 'Outfit', 'Inter', sans-serif;
+        font-size: 0.88rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        color: #ffffff;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%);
+        background-size: 200% 200%;
+        box-shadow: 0 4px 18px rgba(124, 58, 237, 0.35);
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+            box-shadow 0.2s ease,
+            filter 0.2s ease;
+        overflow: hidden;
+        white-space: nowrap;
+        flex-shrink: 0;
+        animation: pdfBtnShimmer 4s ease infinite;
+    }
+
+    @keyframes pdfBtnShimmer {
+
+        0%,
+        100% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+    }
+
+    .admin-pdf-btn__glow {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, transparent 60%);
+        pointer-events: none;
+    }
+
+    .admin-pdf-btn__inner {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .admin-pdf-btn:hover {
+        transform: scale(1.05) translateY(-1px);
+        box-shadow: 0 8px 28px rgba(124, 58, 237, 0.5);
+        filter: brightness(1.08);
+    }
+
+    .admin-pdf-btn:active {
+        transform: scale(0.97);
+        box-shadow: 0 3px 10px rgba(124, 58, 237, 0.3);
+    }
+
+    /* Pulse ring on load */
+    .admin-pdf-btn::after {
+        content: '';
+        position: absolute;
+        inset: -3px;
+        border-radius: inherit;
+        border: 2px solid rgba(167, 139, 250, 0.4);
+        animation: pdfBtnRing 2.5s ease-out infinite;
+        pointer-events: none;
+    }
+
+    @keyframes pdfBtnRing {
+        0% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        70% {
+            opacity: 0;
+            transform: scale(1.25);
+        }
+
+        100% {
+            opacity: 0;
+            transform: scale(1.25);
+        }
+    }
+
+    /* ── TabularInline Visual & Alignment Fix ── */
+    .tabular table {
+        display: table !important;
+        width: 100% !important;
+    }
+
+    .tabular table thead,
+    .tabular table tbody {
+        display: table-row-group !important;
+    }
+
+    .tabular table tr,
+    .tabular table tr.has_original,
+    .tabular table tr[class*="dynamic-"] {
+        display: table-row !important;
+        background-color: transparent !important;
+    }
+
+    .tabular table th,
+    .tabular table td {
+        display: table-cell !important;
+        background-color: transparent !important;
+        background: none !important;
+        color: inherit !important;
+        padding: 10px !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        vertical-align: middle !important;
+        overflow: hidden;
+    }
+
+    /* The .original td contains hidden inputs and __str__ representations. 
+       Forcing it to display: table-cell adds an extra column and shifts all headers!
+       Hiding it visually keeps the hidden inputs functioning and perfectly aligns the columns. */
+    .tabular table td.original {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<!-- Interactive Charts Dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://unpkg.com/chartjs-chart-wordcloud@4"></script>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'admin/js/mock_admin_charts.js' %}" defer></script>
+<style>
+    .admin-chart-container {
+        position: relative;
+        padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; box-sizing: border-box;
+    }
+    .admin-chart-container canvas, .admin-chart-container > div { max-height: 300px; }
+    
+    .chart-download-btn {
+        position: absolute; top: 10px; right: 10px; z-index: 50;
+        width: 38px; height: 38px; border-radius: 10px;
+        background: #fff; border: 1px solid #e2e8f0; color: #64748b;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .chart-download-btn:hover {
+        background: #f8fafc; color: #ea580c; border-color: #fdba74;
+        transform: translateY(-2px); box-shadow: 0 4px 12px rgba(234, 88, 12, 0.15);
+    }
+    .chart-download-btn i { font-size: 16px; }
+</style>
+<script>
+    /* ── Global Chart Download Logic ── */
+    window.downloadChartInstance = function(chartId) {
+        let instance = window.adminChartInstances ? window.adminChartInstances[chartId] : null;
+        
+        // If not found by ID directly, try to find by ID in sub-elements (ApexCharts sub-ids)
+        if (!instance && window.adminChartInstances) {
+            for (let key in window.adminChartInstances) {
+                if (key.includes(chartId) || chartId.includes(key)) {
+                    instance = window.adminChartInstances[key];
+                    break;
+                }
+            }
+        }
+
+        const triggerDownload = (uri, filename) => {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = uri;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        if (instance) {
+            // Chart.js
+            if (instance.toBase64Image) {
+                triggerDownload(instance.toBase64Image(), `${chartId}_export.png`);
+                return;
+            } 
+            // ApexCharts
+            if (instance.dataURI) {
+                instance.dataURI().then(({ imgURI }) => {
+                    triggerDownload(imgURI, `${chartId}_export.png`);
+                }).catch(err => {
+                    console.error("Apex Export failed, trying canvas fallback", err);
+                    fallbackCanvasExport(chartId);
+                });
+                return;
+            }
+        }
+
+        // Fallback for Canvas-based charts (Vis.js, etc.)
+        const fallbackCanvasExport = (id) => {
+            const container = document.getElementById(id);
+            const canvas = container?.tagName === 'CANVAS' ? container : container?.querySelector('canvas');
+            if (canvas) {
+                triggerDownload(canvas.toDataURL('image/png'), `${id}_export.png`);
+            } else {
+                console.warn("No downloadable chart found for ID:", id);
+            }
+        };
+
+        fallbackCanvasExport(chartId);
+    };
+
+    const initChartDownloads = () => {
+        document.querySelectorAll('.admin-chart-container').forEach(container => {
+            if (container.querySelector('.chart-download-btn')) return;
+            
+            // Look for the element that actually has an ID (the chart anchor)
+            const chartTarget = container.querySelector('canvas[id], div[id]');
+            if (!chartTarget) return;
+
+            const btn = document.createElement('button');
+            btn.className = 'chart-download-btn';
+            btn.type = 'button';
+            btn.title = 'Download Graph';
+            btn.innerHTML = '<i class="fas fa-download"></i>';
+            btn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.downloadChartInstance(chartTarget.id);
+            };
+            container.appendChild(btn);
+        });
+    };
+
+    window.addEventListener('load', () => {
+        // Initial run
+        setTimeout(initChartDownloads, 1000);
+        // Periodic check for new charts (e.g. inside accordions or dynamically loaded)
+        setInterval(initChartDownloads, 3000);
+    });
+</script>
+<script>
+    /* ── Portal Message Reader (GLOBAL INIT) ── */
+    (function() {
+        const initReader = () => {
+            if (document.getElementById('message-reader-modal')) return;
+
+            const modal = document.createElement('div');
+            modal.id = 'message-reader-modal';
+            modal.innerHTML = `
+                <div id="prm-backdrop"></div>
+                <div id="prm-panel">
+                    <div id="prm-header">
+                        <h3 id="prm-subject-text">Inquiry</h3>
+                        <button id="prm-close-top" type="button" class="prm-close-btn">&times;</button>
+                    </div>
+                    <div id="prm-body">
+                        <div id="prm-received-info">Received on: <span id="prm-date"></span></div>
+                        <div class="prm-divider"></div>
+                        <div id="prm-body-text"></div>
+                    </div>
+                    <div id="prm-footer">
+                        <button id="prm-done" type="button" class="prm-close-btn">CLOSE</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+
+            const style = document.createElement('style');
+            style.textContent = `
+                #message-reader-modal { display:none; position:fixed; inset:0; z-index:99999; font-family: sans-serif; }
+                #message-reader-modal.prm-open { display:block; }
+                #prm-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.4); backdrop-filter:blur(3px); }
+                #prm-panel { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border-radius:32px; width:520px; max-width:90vw; box-shadow:0 40px 100px rgba(0,0,0,0.2); overflow:hidden; }
+                #prm-header { padding:40px 40px 20px; display:flex; justify-content:space-between; align-items:start; border-bottom:1px solid #eee; }
+                #prm-subject-text { margin:0; font-size:32px; font-weight:800; color:#1e293b; }
+                #prm-close-top { background:#fee2e2; border:none; color:#ef4444; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:24px; display:flex; align-items:center; justify-content:center; }
+                #prm-body { padding:24px 40px 0; }
+                #prm-received-info { font-size:16px; color:#64748b; margin-bottom:12px; }
+                .prm-divider { height:1px; background:#eee; margin-bottom:24px; }
+                #prm-body-text { font-size:20px; color:#334155; line-height:1.5; padding-bottom:40px; white-space:pre-wrap; }
+                #prm-footer { padding:20px 40px 40px; display:flex; justify-content:flex-end; }
+                #prm-done { padding:15px 35px; border-radius:30px; background:#eff6ff; color:#1d4ed8; font-weight:700; border:1px solid #dbeafe; cursor:pointer; font-size:16px; }
+            `;
+            document.head.appendChild(style);
+
+            const close = () => modal.classList.remove('prm-open');
+            document.querySelectorAll('.prm-close-btn').forEach(b => b.onclick = close);
+            document.getElementById('prm-backdrop').onclick = close;
+        };
+
+        const getCsrfToken = () => {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, 10) === 'csrftoken=') {
+                        cookieValue = decodeURIComponent(cookie.substring(10));
+                        break;
+                    }
+                }
+            }
+            return cookieValue || (document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '');
+        };
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.admin-read-msg-trigger');
+            if (!btn) return;
+            e.preventDefault();
+            initReader();
+            const modal = document.getElementById('message-reader-modal');
+            document.getElementById('prm-subject-text').innerText = btn.dataset.subject || 'Inquiry';
+            document.getElementById('prm-body-text').innerText = btn.dataset.body || '';
+            document.getElementById('prm-date').innerText = btn.dataset.received || '-';
+            modal.classList.add('prm-open');
+
+            fetch('/group/admin-messaging/mark-read/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRFToken': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ msg_id: btn.dataset.id })
+            }).then(res => res.json()).then(data => {
+                if (data.ok) {
+                    const row = btn.closest('tr');
+                    const isReadCell = row ? row.querySelector('.field-is_read') : null;
+                    if (isReadCell) isReadCell.innerHTML = '<img src="/static/admin/img/icon-yes.svg" alt="True">';
+                    btn.style.background = '#f0fdf4';
+                }
+            });
+        });
+    })();
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const isAdoptionList = window.location.pathname.indexOf('/adoptions/adoptionrequest/') !== -1;
+        const searchBar = document.querySelector('#searchbar');
+        const toolbar = document.querySelector('#toolbar');
+
+        if (isAdoptionList && searchBar) {
+            // Create suggestion dropdown 
+            const suggestionsDiv = document.createElement('div');
+            suggestionsDiv.className = 'search-suggestions';
+            searchBar.parentNode.style.position = 'relative';
+            searchBar.parentNode.appendChild(suggestionsDiv);
+
+            let debounceTimer;
+
+            // Perform AJAX Search (Instant Sorting)
+            const performInstantSearch = async (query) => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('q', query);
+
+                try {
+                    const response = await fetch(url.toString());
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Swap the result list
+                    const oldResults = document.querySelector('#changelist-form');
+                    const newResults = doc.querySelector('#changelist-form');
+                    if (oldResults && newResults) {
+                        oldResults.innerHTML = newResults.innerHTML;
+                        // Re-inject actions to the new rows
+                        if (typeof injectActions === 'function') injectActions();
+                    }
+                } catch (err) { console.error('Instant search failed', err); }
+            };
+
+            // Fetch & Render Suggestions
+            const fetchSuggestions = async (query) => {
+                if (!query) { suggestionsDiv.style.display = 'none'; return; }
+                try {
+                    const res = await fetch(`/admin/adoptions/adoptionrequest/search_suggestions/?q=${encodeURIComponent(query)}`);
+                    const data = await res.json();
+
+                    if (data.length > 0) {
+                        suggestionsDiv.innerHTML = data.map(item => `
+                        <div class="suggestion-item" data-val="${item.val}">
+                            <span class="suggestion-type">${item.type}</span>
+                            <span class="suggestion-val">${item.val}</span>
+                        </div>
+                    `).join('');
+                        suggestionsDiv.style.display = 'block';
+
+                        suggestionsDiv.querySelectorAll('.suggestion-item').forEach(item => {
+                            item.onclick = () => {
+                                searchBar.value = item.dataset.val;
+                                suggestionsDiv.style.display = 'none';
+                                performInstantSearch(item.dataset.val);
+                            };
+                        });
+                    } else { suggestionsDiv.style.display = 'none'; }
+                } catch (err) { console.error('Suggestions failed', err); }
+            };
+
+            searchBar.addEventListener('input', (e) => {
+                const query = e.target.value;
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    performInstantSearch(query);
+                    fetchSuggestions(query);
+                }, 250);
+            });
+
+            // Close suggestions on click outside
+            document.addEventListener('click', (e) => {
+                if (!suggestionsDiv.contains(e.target) && e.target !== searchBar) {
+                    suggestionsDiv.style.display = 'none';
+                }
+            });
+        }
+
+        var ICON_EYE = '<svg class="admin-action-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        var ICON_COMPOSE = '<svg class="admin-action-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.375 2.625a1 1 0 0 0-1.414 0L9 10.586V14h3.414l8.039-8.039a1 1 0 0 0 0-1.414z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        var ICON_TRASH = '<svg class="admin-action-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 6h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="10" y1="11" x2="10" y2="17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="14" y1="11" x2="14" y2="17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+        var ICON_PROFILE = '<svg class="admin-action-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        var ICON_USERS = '<svg class="admin-action-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        var ICON_USER_PLUS = '<svg class="admin-action-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="20" y1="8" x2="20" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="23" y1="11" x2="17" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+
+        /* Detect page context */
+        var isProductList = window.location.pathname.indexOf('/products/product/') !== -1 && window.location.pathname.indexOf('/change/') === -1 && window.location.pathname.indexOf('/add/') === -1;
+        var isComplaintList = window.location.pathname.indexOf('/complaints/complaint/') !== -1 && window.location.pathname.indexOf('/change/') === -1 && window.location.pathname.indexOf('/add/') === -1;
+        var isGroupList = window.location.pathname.indexOf('/auth/group/') !== -1 && window.location.pathname.indexOf('/change/') === -1 && window.location.pathname.indexOf('/add/') === -1;
+
+        function injectActions() {
+            if (window.location.pathname.indexOf('/buyers/') !== -1) return;
+
+            const table = document.querySelector('#result_list');
+            if (!table) return;
+
+            // 1. Add "Action" Header (sentence case, bold navy — not ALL CAPS)
+            const thead = table.querySelector('thead tr');
+            if (thead && !thead.querySelector('.column-action-header')) {
+                const th = document.createElement('th');
+                th.className = 'column-action-header';
+                th.setAttribute('scope', 'col');
+                th.innerHTML = '<div class="text"><span>Action</span></div>';
+                th.style.textAlign = 'center';
+                thead.appendChild(th);
+            }
+
+            // 2. Inject flat icon actions for each row
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                if (row.querySelector('.field-actions')) return;
+
+                const allLinks = row.querySelectorAll('a');
+                let mainLink = null;
+
+                for (let link of allLinks) {
+                    if (link.href.includes('/change/') || link.href.match(/\/\d+\/$/)) {
+                        mainLink = link;
+                        break;
+                    }
+                }
+                if (!mainLink && allLinks.length > 0) mainLink = allLinks[0];
+                if (!mainLink) return;
+
+                const baseUrl = mainLink.getAttribute('href');
+                if (!baseUrl) return;
+
+                const changeUrl = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+                const deleteUrl = changeUrl.includes('/change/') ? changeUrl.replace('/change/', '/delete/') : changeUrl + 'delete/';
+                const viewUrl = changeUrl;
+
+                /* Build the seller profile button for product rows */
+                var sellerProfileBtn = '';
+                var buyersBtn = '';
+                if (isProductList) {
+                    /* Add Buyers View button */
+                    buyersBtn = '<a href="' + changeUrl.replace('/change/', '/buyers/') + '" class="admin-action-btn" title="View Buyers" style="background:#eef2ff;color:#4f46e5;">' + ICON_USERS + '</a>';
+
+                    /* Find the seller cell — it's the .field-seller td */
+                    var sellerCell = row.querySelector('.field-seller');
+                    var sellerLink = sellerCell ? sellerCell.querySelector('a') : null;
+                    var sellerHref = '';
+                    if (sellerLink) {
+                        sellerHref = sellerLink.getAttribute('href');
+                    } else if (sellerCell) {
+                        /* Seller is shown as plain text (email) — extract from text and build URL pattern */
+                        sellerHref = '';
+                    }
+                    if (sellerHref) {
+                        sellerProfileBtn =
+                            '<a href="' + sellerHref + '" class="admin-action-btn admin-action-btn--profile" title="Seller Profile" style="background:#f0fdf4;color:#059669;border-color:#a7f3d0;">' + ICON_PROFILE + '</a>';
+                    } else {
+                        /* Fallback: link to accounts/customuser list filtered by sellers */
+                        sellerProfileBtn =
+                            '<a href="/admin/accounts/customuser/?role__exact=seller" class="admin-action-btn admin-action-btn--profile" title="View Sellers" style="background:#f0fdf4;color:#059669;border-color:#a7f3d0;">' + ICON_PROFILE + '</a>';
+                    }
+                }
+
+                /* Reply button for complaints */
+                var replyBtn = '';
+                if (isComplaintList) {
+                    /* data-id pulled from the change URL number */
+                    var idMatch = changeUrl.match(/\/(\d+)\//);
+                    var cid = idMatch ? idMatch[1] : '';
+                    /* Read current status from the status cell */
+                    var statusCell = row.querySelector('.field-status');
+                    var statusText = statusCell ? (statusCell.innerText || '').trim().toLowerCase() : '';
+                    var isDone = statusText === 'done';
+                    if (cid) {
+                        replyBtn =
+                            '<button type="button" class="admin-action-btn admin-reply-btn" ' +
+                            'data-id="' + cid + '" title="Reply" ' +
+                            (isDone ? 'style="background:#e8f5e9;color:#388e3c;border-color:#a5d6a7;" title="Already replied"' : 'style="background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;"') + '>' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+                            '</button>';
+                    }
+                }
+
+                /* Quick Add member for groups */
+                var quickAddBtn = '';
+                var groupMembersBtn = '';
+                if (isGroupList) {
+                    var groupIdMatch = changeUrl.match(/\/(\d+)\//);
+                    var gid = groupIdMatch ? groupIdMatch[1] : '';
+                    if (gid) {
+                        quickAddBtn = '<button type="button" class="admin-action-btn admin-quick-add-btn" data-id="' + gid + '" title="Add Member" style="background:#fff7ed;color:#ea580c;border-color:#ffedd5;">' + ICON_USER_PLUS + '</button>';
+                        groupMembersBtn = '<a href="/admin/group_portal/groupmember/?group__id__exact=' + gid + '" class="admin-action-btn" title="View Members" style="background:#e0f2fe;color:#0284c7;border-color:#bae6fd;">' + ICON_USERS + '</a>';
+                    }
+                }
+
+                const td = document.createElement('td');
+                td.className = 'field-actions';
+                td.innerHTML =
+                    '<div class="admin-action-row">' +
+                    '<a href="' + viewUrl + '" class="admin-action-btn admin-action-btn--view" title="View">' + ICON_EYE + '</a>' +
+                    '<a href="' + changeUrl + '" class="admin-action-btn admin-action-btn--edit" title="Edit">' + ICON_COMPOSE + '</a>' +
+                    '<a href="' + deleteUrl + '" class="admin-action-btn admin-action-btn--delete" title="Delete">' + ICON_TRASH + '</a>' +
+                    buyersBtn +
+                    sellerProfileBtn +
+                    replyBtn +
+                    groupMembersBtn +
+                    quickAddBtn +
+                    '</div>';
+                row.appendChild(td);
+            });
+        }
+
+        injectActions();
+        setTimeout(injectActions, 500);
+        initSmartSorter();
+
+        /* ── Complaint Reply Modal & Logic ── */
+        (function () {
+            /* Only activate on complaints list page */
+            if (!isComplaintList) return;
+
+            /* ── Build modal DOM ── */
+            var modal = document.createElement('div');
+            modal.id = 'complaint-reply-modal';
+            modal.innerHTML = [
+                '<div id="crm-backdrop"></div>',
+                '<div id="crm-panel">',
+                '  <div id="crm-header">',
+                '    <span id="crm-title">',
+                '      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px;margin-right:8px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+                '      Reply to Complaint',
+                '    </span>',
+                '    <button id="crm-close" type="button" title="Close">&times;</button>',
+                '  </div>',
+                '  <div id="crm-body">',
+                '    <label for="crm-textarea" id="crm-label">Your reply message</label>',
+                '    <textarea id="crm-textarea" placeholder="Type your reply here..." rows="6"></textarea>',
+                '    <p id="crm-hint">Submitting will mark the complaint as <strong>Done</strong> and notify the user.</p>',
+                '  </div>',
+                '  <div id="crm-footer">',
+                '    <button id="crm-cancel" type="button">Cancel</button>',
+                '    <button id="crm-submit" type="button">',
+                '      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+                '      Send Reply',
+                '    </button>',
+                '  </div>',
+                '</div>'
+            ].join('');
+            document.body.appendChild(modal);
+
+            /* ── Inject modal CSS ── */
+            var style = document.createElement('style');
+            style.textContent = [
+                '#complaint-reply-modal { display:none; position:fixed; inset:0; z-index:9999; }',
+                '#complaint-reply-modal.crm-open { display:block; }',
+                '#crm-backdrop { position:fixed; inset:0; background:rgba(15,23,42,.55); backdrop-filter:blur(3px); }',
+                '#crm-panel {',
+                '  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.96);',
+                '  background:#fff; border-radius:16px; width:520px; max-width:calc(100vw - 32px);',
+                '  box-shadow:0 24px 60px rgba(0,0,0,.22); transition:transform .18s ease,opacity .18s ease;',
+                '  overflow:hidden;',
+                '}',
+                '#complaint-reply-modal.crm-open #crm-panel { transform:translate(-50%,-50%) scale(1); }',
+                '#crm-header {',
+                '  display:flex; align-items:center; justify-content:space-between;',
+                '  padding:18px 22px 16px; background:linear-gradient(135deg,#1e3a8a,#4f46e5);',
+                '}',
+                '#crm-title { color:#fff; font-weight:700; font-size:15px; display:flex; align-items:center; }',
+                '#crm-close {',
+                '  background:rgba(255,255,255,.18); border:none; border-radius:50%; width:30px; height:30px;',
+                '  color:#fff; font-size:18px; cursor:pointer; line-height:1; display:flex; align-items:center; justify-content:center;',
+                '  transition:background .15s;',
+                '}',
+                '#crm-close:hover { background:rgba(255,255,255,.35); }',
+                '#crm-body { padding:22px 22px 12px; }',
+                '#crm-label { display:block; font-size:12.5px; font-weight:600; color:#374151; margin-bottom:8px; }',
+                '#crm-textarea {',
+                '  width:100%; box-sizing:border-box; border:1.5px solid #e2e8f0; border-radius:10px;',
+                '  padding:12px 14px; font-size:13.5px; line-height:1.6; resize:vertical; min-height:120px;',
+                '  color:#1e293b; outline:none; transition:border-color .15s, box-shadow .15s;',
+                '}',
+                '#crm-textarea:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.12); }',
+                '#crm-hint { margin:10px 0 0; font-size:11.5px; color:#6b7280; }',
+                '#crm-hint strong { color:#059669; }',
+                '#crm-footer { padding:14px 22px 20px; display:flex; gap:10px; justify-content:flex-end; border-top:1px solid #f1f5f9; }',
+                '#crm-cancel { padding:9px 20px; border:1.5px solid #e2e8f0; border-radius:8px; background:#fff; color:#374151; font-size:13px; font-weight:500; cursor:pointer; transition:background .15s; }',
+                '#crm-cancel:hover { background:#f8fafc; }',
+                '#crm-submit {',
+                '  padding:9px 22px; border:none; border-radius:8px; background:linear-gradient(135deg,#1d4ed8,#4f46e5);',
+                '  color:#fff; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center;',
+                '  transition:opacity .15s, transform .1s; box-shadow:0 3px 10px rgba(79,70,229,.35);',
+                '}',
+                '#crm-submit:hover { opacity:.9; }',
+                '#crm-submit:active { transform:scale(.97); }',
+                '#crm-submit:disabled { opacity:.55; cursor:not-allowed; }',
+                /* Toast */
+                '#crm-toast {',
+                '  position:fixed; bottom:28px; right:28px; z-index:99999; display:flex; align-items:center; gap:10px;',
+                '  padding:14px 20px; border-radius:12px; font-size:13.5px; font-weight:600; color:#fff;',
+                '  box-shadow:0 8px 30px rgba(0,0,0,.2); transform:translateY(80px); opacity:0;',
+                '  transition:transform .3s cubic-bezier(.34,1.56,.64,1), opacity .3s;',
+                '}',
+                '#crm-toast.crm-toast-show { transform:translateY(0); opacity:1; }',
+                '#crm-toast.crm-toast-success { background:linear-gradient(135deg,#059669,#10b981); }',
+                '#crm-toast.crm-toast-error { background:linear-gradient(135deg,#dc2626,#ef4444); }',
+            ].join('\n');
+            document.head.appendChild(style);
+
+            /* ── Toast helper ── */
+            var toastEl = null;
+            var toastTimer = null;
+            function showToast(msg, type) {
+                if (!toastEl) {
+                    toastEl = document.createElement('div');
+                    toastEl.id = 'crm-toast';
+                    document.body.appendChild(toastEl);
+                }
+                toastEl.textContent = msg;
+                toastEl.className = 'crm-toast-' + (type || 'success');
+                requestAnimationFrame(function () { toastEl.classList.add('crm-toast-show'); });
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(function () { toastEl.classList.remove('crm-toast-show'); }, 3800);
+            }
+
+            /* ── Modal open/close ── */
+            var currentId = null;
+            function openModal(id) {
+                currentId = id;
+                document.getElementById('crm-textarea').value = '';
+                modal.classList.add('crm-open');
+                setTimeout(function () { document.getElementById('crm-textarea').focus(); }, 160);
+            }
+            function closeModal() {
+                modal.classList.remove('crm-open');
+                currentId = null;
+            }
+
+            document.getElementById('crm-close').addEventListener('click', closeModal);
+            document.getElementById('crm-cancel').addEventListener('click', closeModal);
+            document.getElementById('crm-backdrop').addEventListener('click', closeModal);
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+            /* ── Delegate click on reply buttons (works after AJAX re-inject) ── */
+            document.addEventListener('click', function (e) {
+                var btn = e.target.closest('.admin-reply-btn');
+                if (!btn) return;
+                openModal(btn.getAttribute('data-id'));
+            });
+
+            /* ── Submit reply ── */
+            document.getElementById('crm-submit').addEventListener('click', function () {
+                var reply = (document.getElementById('crm-textarea').value || '').trim();
+                if (!reply) {
+                    document.getElementById('crm-textarea').focus();
+                    document.getElementById('crm-textarea').style.borderColor = '#dc2626';
+                    return;
+                }
+                document.getElementById('crm-textarea').style.borderColor = '';
+
+                var btn = document.getElementById('crm-submit');
+                btn.disabled = true;
+                btn.textContent = 'Sending...';
+
+                /* Get CSRF token reliably */
+                function getCsrfTokenFallback() {
+                    var domToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                    if (domToken && domToken.value) return domToken.value;
+                    var v = document.cookie.match('(^|;) ?csrftoken=([^;]*)(;|$)');
+                    return v ? v[2] : null;
+                }
+
+                fetch('/admin/complaint-reply/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfTokenFallback(),
+                    },
+                    body: JSON.stringify({ complaint_id: currentId, reply: reply }),
+                })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Send Reply';
+
+                        if (data.ok) {
+                            closeModal();
+                            showToast('Reply sent \u2714  Status updated to Done', 'success');
+
+                            /* Live-update the status cell without reload */
+                            var rows = document.querySelectorAll('#result_list tbody tr');
+                            rows.forEach(function (row) {
+                                var replyBtnEl = row.querySelector('.admin-reply-btn[data-id="' + currentId + '"]');
+                                if (!replyBtnEl) return;
+                                var statusCell = row.querySelector('.field-status');
+                                if (statusCell) {
+                                    statusCell.textContent = data.new_status || 'Done';
+                                    statusCell.style.color = '#059669';
+                                    statusCell.style.fontWeight = '600';
+                                }
+                                /* Update reply button to green "Done" style */
+                                replyBtnEl.style.background = '#e8f5e9';
+                                replyBtnEl.style.color = '#388e3c';
+                                replyBtnEl.style.borderColor = '#a5d6a7';
+                                replyBtnEl.title = 'Already replied';
+                            });
+                        } else {
+                            showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+                        }
+                    })
+                    .catch(function () {
+                        btn.disabled = false;
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Send Reply';
+                        showToast('Network error. Please try again.', 'error');
+                    });
+            });
+        })();
+
+        /* ── Quick Add Group Member Modal & Logic ── */
+        (function () {
+            if (!isGroupList) return;
+
+            var modal = document.createElement('div');
+            modal.id = 'quick-add-member-modal';
+            modal.innerHTML = [
+                '<div id="qam-backdrop"></div>',
+                '<div id="qam-panel">',
+                '  <div id="qam-header">',
+                '    <span id="qam-title">',
+                '      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px;margin-right:8px;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></svg>',
+                '      Quick Add Portal Member',
+                '    </span>',
+                '    <button id="qam-close" type="button" title="Close">&times;</button>',
+                '  </div>',
+                '  <div id="qam-body">',
+                '    <label for="qam-email" class="qam-label">Member Email</label>',
+                '    <input type="email" id="qam-email" placeholder="member@example.com" class="qam-input" required autocomplete="off" />',
+                '    <label for="qam-password" class="qam-label" style="margin-top:12px;">Password (Min 8 chars)</label>',
+                '    <input type="password" id="qam-password" placeholder="••••••••" class="qam-input" required autocomplete="new-password" />',
+                '    <p class="qam-hint">They will use these credentials to log in at <strong>/group/login/</strong>.</p>',
+                '  </div>',
+                '  <div id="qam-footer">',
+                '    <button id="qam-cancel" type="button">Cancel</button>',
+                '    <button id="qam-submit" type="button">',
+                '      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+                '      Create Member',
+                '    </button>',
+                '  </div>',
+                '</div>'
+            ].join('');
+            document.body.appendChild(modal);
+
+            var style = document.createElement('style');
+            style.textContent = [
+                '#quick-add-member-modal { display:none; position:fixed; inset:0; z-index:9999; }',
+                '#quick-add-member-modal.qam-open { display:block; }',
+                '#qam-backdrop { position:fixed; inset:0; background:rgba(15,23,42,.55); backdrop-filter:blur(3px); }',
+                '#qam-panel {',
+                '  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.96);',
+                '  background:#fff; border-radius:16px; width:420px; max-width:calc(100vw - 32px);',
+                '  box-shadow:0 24px 60px rgba(0,0,0,.22); transition:transform .18s ease,opacity .18s ease;',
+                '  overflow:hidden;',
+                '}',
+                '#quick-add-member-modal.qam-open #qam-panel { transform:translate(-50%,-50%) scale(1); }',
+                '#qam-header {',
+                '  display:flex; align-items:center; justify-content:space-between;',
+                '  padding:18px 22px 16px; background:linear-gradient(135deg,#ea580c,#f97316);',
+                '}',
+                '#qam-title { color:#fff; font-weight:700; font-size:15px; display:flex; align-items:center; }',
+                '#qam-close {',
+                '  background:rgba(255,255,255,.18); border:none; border-radius:50%; width:30px; height:30px;',
+                '  color:#fff; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;',
+                '  transition:background .15s;',
+                '}',
+                '#qam-close:hover { background:rgba(255,255,255,.35); }',
+                '#qam-body { padding:22px 22px 12px; }',
+                '.qam-label { display:block; font-size:12.5px; font-weight:600; color:#374151; margin-bottom:8px; }',
+                '.qam-input {',
+                '  width:100%; box-sizing:border-box; border:1.5px solid #e2e8f0; border-radius:10px;',
+                '  padding:12px 14px; font-size:13.5px; margin-bottom:10px;',
+                '  color:#1e293b; outline:none; transition:border-color .15s, box-shadow .15s;',
+                '}',
+                '.qam-input:focus { border-color:#ea580c; box-shadow:0 0 0 3px rgba(234,88,12,.12); }',
+                '.qam-hint { margin:5px 0 0; font-size:11.5px; color:#6b7280; }',
+                '.qam-hint strong { color:#0f172a; }',
+                '#qam-footer { padding:14px 22px 20px; display:flex; gap:10px; justify-content:flex-end; border-top:1px solid #f1f5f9; }',
+                '#qam-cancel { padding:9px 20px; border:1.5px solid #e2e8f0; border-radius:8px; background:#fff; color:#374151; font-size:13px; font-weight:500; cursor:pointer; }',
+                '#qam-cancel:hover { background:#f8fafc; }',
+                '#qam-submit {',
+                '  padding:9px 22px; border:none; border-radius:8px; background:linear-gradient(135deg,#ea580c,#f97316);',
+                '  color:#fff; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center;',
+                '  transition:opacity .15s, transform .1s; box-shadow:0 3px 10px rgba(234,88,12,.35);',
+                '}',
+                '#qam-submit:hover { opacity:.9; }',
+                '#qam-submit:active { transform:scale(.97); }',
+                '#qam-submit:disabled { opacity:.55; cursor:not-allowed; }',
+                '#qam-toast {',
+                '  position:fixed; bottom:28px; right:28px; z-index:99999; display:flex; align-items:center; gap:10px;',
+                '  padding:14px 20px; border-radius:12px; font-size:13.5px; font-weight:600; color:#fff;',
+                '  box-shadow:0 8px 30px rgba(0,0,0,.2); transform:translateY(80px); opacity:0;',
+                '  transition:transform .3s cubic-bezier(.34,1.56,.64,1), opacity .3s;',
+                '}',
+                '#qam-toast.qam-toast-show { transform:translateY(0); opacity:1; }',
+                '#qam-toast.qam-toast-success { background:linear-gradient(135deg,#059669,#10b981); }',
+                '#qam-toast.qam-toast-error { background:linear-gradient(135deg,#dc2626,#ef4444); }'
+            ].join('\n');
+            document.head.appendChild(style);
+
+            var toastEl = null;
+            var toastTimer = null;
+            function showToast(msg, type) {
+                if (!toastEl) {
+                    toastEl = document.createElement('div');
+                    toastEl.id = 'qam-toast';
+                    document.body.appendChild(toastEl);
+                }
+                toastEl.textContent = msg;
+                toastEl.className = 'qam-toast-' + (type || 'success');
+                requestAnimationFrame(function () { toastEl.classList.add('qam-toast-show'); });
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(function () { toastEl.classList.remove('qam-toast-show'); }, 3800);
+            }
+
+            var currentGroupId = null;
+            function openModal(id) {
+                currentGroupId = id;
+                document.getElementById('qam-email').value = '';
+                document.getElementById('qam-password').value = '';
+                modal.classList.add('qam-open');
+                setTimeout(function () { document.getElementById('qam-email').focus(); }, 160);
+            }
+            function closeModal() {
+                modal.classList.remove('qam-open');
+                currentGroupId = null;
+            }
+
+            document.getElementById('qam-close').addEventListener('click', closeModal);
+            document.getElementById('qam-cancel').addEventListener('click', closeModal);
+            document.getElementById('qam-backdrop').addEventListener('click', closeModal);
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+            document.addEventListener('click', function (e) {
+                var btn = e.target.closest('.admin-quick-add-btn');
+                if (btn) openModal(btn.getAttribute('data-id'));
+            });
+
+            document.getElementById('qam-submit').addEventListener('click', function () {
+                var el = document.getElementById('qam-email'), pwEl = document.getElementById('qam-password');
+                var email = el.value.trim(), password = pwEl.value;
+
+                if (!email) { el.focus(); el.style.borderColor = '#dc2626'; return; }
+                el.style.borderColor = '';
+
+                if (password.length < 8) { pwEl.focus(); pwEl.style.borderColor = '#dc2626'; return; }
+                pwEl.style.borderColor = '';
+
+                var btn = document.getElementById('qam-submit');
+                btn.disabled = true;
+                btn.textContent = 'Creating...';
+
+                function getCsrfTokenFallback() {
+                    var domToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                    if (domToken && domToken.value) return domToken.value;
+                    var v = document.cookie.match('(^|;) ?csrftoken=([^;]*)(;|$)');
+                    return v ? v[2] : null;
+                }
+
+                fetch('/admin/quick-add-member/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfTokenFallback(),
+                    },
+                    body: JSON.stringify({ group_id: currentGroupId, email: email, password: password }),
+                })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create Member';
+
+                        if (data.ok) {
+                            closeModal();
+                            showToast('Member created successfully \u2714', 'success');
+                        } else {
+                            showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+                        }
+                    })
+                    .catch(function () {
+                        btn.disabled = false;
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create Member';
+                        showToast('Network error. Please try again.', 'error');
+                    });
+            });
+        })();
+
+        /* ═══════════════════════════════════════════════════════════
+           PROFESSIONAL PDF EXPORT  —  reads the live filtered table
+           ═══════════════════════════════════════════════════════════ */
+        window.downloadAdminPDF = function () {
+            var jsPDFLib = window.jspdf && window.jspdf.jsPDF;
+            if (!jsPDFLib) { alert('PDF library not loaded. Please refresh.'); return; }
+
+            var table = document.querySelector('#result_list');
+            if (!table) { alert('No data table found on this page.'); return; }
+
+            /* ── Page title ── */
+            var pageTitle = document.title.replace(/\s*\|.*$/, '').trim()
+                .replace(/ select .* to change$/i, '').trim()
+                || 'Admin Export';
+
+            /* ── Latin-1 / ASCII sanitiser so jsPDF Helvetica renders cleanly ── */
+            function san(s) {
+                if (s === null || s === undefined) return '';
+                return String(s)
+                    .replace(/[\u2014\u2013]/g, '-')
+                    .replace(/[\u2018\u2019]/g, "'")
+                    .replace(/[\u201c\u201d]/g, '"')
+                    .replace(/\u2026/g, '...')
+                    .replace(/[\u2022\u25cf\u25aa]/g, '*')
+                    .replace(/[^\x00-\xFF]/g, '?');
+            }
+
+            /* ── STEP 1: Columns  — read from TH.column-{name} CSS class
+               Django admin ALWAYS stamps "column-{fieldname}" on every <th>
+               and "field-{fieldname}" on every <td>. Using class lookup
+               instead of positional index avoids the 1-column shift caused
+               by hidden checkbox TDs at position 0.                          ── */
+            var ths = Array.from(table.querySelectorAll('thead th'));
+            var columns = [];   /* [{header, fieldName}] */
+
+            ths.forEach(function (th) {
+                var txt = (th.innerText || th.textContent || '').trim().replace(/\s+/g, ' ');
+                if (
+                    th.classList.contains('action-checkbox-column') ||
+                    th.classList.contains('column-action-header') ||
+                    txt === '' || txt.toLowerCase() === 'action' || txt.toLowerCase() === 'actions'
+                ) return;
+                var colCls = Array.from(th.classList).find(function (c) {
+                    return c.startsWith('column-') && c !== 'column-action-header';
+                });
+                columns.push({ header: san(txt), fieldName: colCls ? colCls.replace('column-', '') : null });
+            });
+
+            if (!columns.length) { alert('No columns detected.'); return; }
+            var headers = columns.map(function (c) { return c.header; });
+
+            /* ── STEP 2: Cell extractor ──
+               • Django boolean: <img src="icon-yes.svg" alt="True">  → "Yes" / "No"
+               • Real avatar:    <img src="/media/avatars/...">       → {isAvatar, src}
+               • Everything else: sanitised innerText                              ── */
+            function extractCell(td) {
+                if (!td) return { text: '', isAvatar: false };
+
+                var imgs = td.querySelectorAll('img');
+                for (var ii = 0; ii < imgs.length; ii++) {
+                    var img = imgs[ii];
+                    var src = (img.src || '').toLowerCase();
+                    var alt = (img.alt || '').toLowerCase();
+
+                    /* Django admin boolean icons */
+                    if (src.indexOf('icon-yes') !== -1 || src.indexOf('icon-no') !== -1 ||
+                        alt === 'true' || alt === 'false' || alt === 'yes' || alt === 'no') {
+                        var yes = src.indexOf('icon-yes') !== -1 || alt === 'true' || alt === 'yes';
+                        return { text: yes ? 'Yes' : 'No', isAvatar: false };
+                    }
+                    /* Real uploaded / media avatar */
+                    if (src.indexOf('/media/') !== -1 || src.indexOf('/avatars/') !== -1 ||
+                        src.indexOf('/uploads/') !== -1 || src.indexOf('cloudinary') !== -1) {
+                        return { text: '', isAvatar: true, src: img.src };
+                    }
+                    /* Badge / icon we don't recognise */
+                    return { text: '', isAvatar: false };
+                }
+
+                var text = (td.innerText || td.textContent || '').trim().replace(/\s+/g, ' ');
+                text = text.replace(/\b(View|Edit|Delete|Seller Profile|View Buyers|Profile)\b/gi, '').trim();
+                return { text: san(text), isAvatar: false };
+            }
+
+            /* ── STEP 3: Build rows using .field-{fieldName} class lookup ── */
+            var trows = Array.from(table.querySelectorAll('tbody tr'));
+            var body = [];
+
+            trows.forEach(function (tr) {
+                if (tr.style.display === 'none') return;
+                var row = columns.map(function (col) {
+                    var td = col.fieldName ? tr.querySelector('.field-' + col.fieldName) : null;
+                    return extractCell(td);
+                });
+                body.push(row);
+            });
+
+            if (!body.length) { alert('No data rows to export.'); return; }
+
+            /* ── STEP 4: Pre-load avatars via canvas (circle-clipped) ── */
+            var avatarCache = {};
+            var avatarPromises = [];
+
+            body.forEach(function (row) {
+                row.forEach(function (cell) {
+                    if (cell.isAvatar && cell.src &&
+                        !Object.prototype.hasOwnProperty.call(avatarCache, cell.src)) {
+                        avatarCache[cell.src] = null;
+                        var p = new Promise(function (resolve) {
+                            var el = new Image();
+                            el.crossOrigin = 'anonymous';
+                            el.onload = function () {
+                                try {
+                                    var cv = document.createElement('canvas');
+                                    cv.width = cv.height = 64;
+                                    var ctx = cv.getContext('2d');
+                                    ctx.beginPath();
+                                    ctx.arc(32, 32, 32, 0, Math.PI * 2);
+                                    ctx.closePath();
+                                    ctx.clip();
+                                    ctx.drawImage(el, 0, 0, 64, 64);
+                                    avatarCache[cell.src] = cv.toDataURL('image/png');
+                                } catch (e) { avatarCache[cell.src] = null; }
+                                resolve();
+                            };
+                            el.onerror = function () { avatarCache[cell.src] = null; resolve(); };
+                            el.src = cell.src;
+                        });
+                        avatarPromises.push(p);
+                    }
+                });
+            });
+
+            Promise.all(avatarPromises).then(function () {
+
+                /* Flatten: avatar cells become '' (image drawn post-render) */
+                var bodyForTable = body.map(function (row) {
+                    return row.map(function (cell) { return cell.isAvatar ? '' : (cell.text || ''); });
+                });
+
+                /* Detect which column indexes contain avatars (for narrow width) */
+                var avatarCols = {};
+                body.forEach(function (row) {
+                    row.forEach(function (cell, ci) { if (cell.isAvatar) avatarCols[ci] = true; });
+                });
+                headers.forEach(function (h, i) {
+                    if (h.toLowerCase().indexOf('avatar') !== -1 ||
+                        h.toLowerCase().indexOf('photo') !== -1) avatarCols[i] = true;
+                });
+
+                /* Column styles */
+                var colStyles = {};
+                headers.forEach(function (h, i) {
+                    if (avatarCols[i]) {
+                        colStyles[i] = { cellWidth: 18, halign: 'center' };
+                    } else if (h.toLowerCase().indexOf('transaction') !== -1 ||
+                        h.toLowerCase().indexOf('id') !== -1) {
+                        colStyles[i] = { cellWidth: 'auto', overflow: 'linebreak' };
+                    } else {
+                        colStyles[i] = { overflow: 'linebreak' };
+                    }
+                });
+
+                /* ── STEP 5: Generate PDF ── */
+                var doc = new jsPDFLib({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                var pageW = doc.internal.pageSize.getWidth();
+                var pageH = doc.internal.pageSize.getHeight();
+                var now = new Date();
+                var dtStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
+                    + '   '
+                    + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                var H = 26;   /* header height */
+                var F = 10;   /* footer height */
+                var avatarMeta = [];
+
+                doc.autoTable({
+                    head: [headers],
+                    body: bodyForTable,
+                    startY: H + 3,
+                    margin: { top: H + 3, left: 8, right: 8, bottom: F + 6 },
+                    tableWidth: 'auto',
+                    styles: {
+                        font: 'helvetica',
+                        fontSize: 7.5,
+                        cellPadding: { top: 3.5, right: 4, bottom: 3.5, left: 4 },
+                        valign: 'middle',
+                        overflow: 'linebreak',
+                        lineColor: [226, 232, 240],
+                        lineWidth: 0.25,
+                        textColor: [30, 41, 59],
+                        minCellHeight: 12,
+                    },
+                    headStyles: {
+                        fillColor: [27, 37, 89],
+                        textColor: [255, 255, 255],
+                        fontStyle: 'bold',
+                        fontSize: 7.5,
+                        cellPadding: { top: 4.5, right: 4, bottom: 4.5, left: 4 },
+                        halign: 'left',
+                        minCellHeight: 12,
+                    },
+                    alternateRowStyles: { fillColor: [248, 250, 252] },
+                    columnStyles: colStyles,
+
+                    didDrawPage: function () {
+                        var pg = doc.internal.getCurrentPageInfo().pageNumber;
+                        /* Header bar */
+                        doc.setFillColor(27, 37, 89);
+                        doc.rect(0, 0, pageW, H, 'F');
+                        doc.setFillColor(79, 70, 229);
+                        doc.rect(0, H - 2.5, pageW, 2.5, 'F');
+                        /* Title */
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(13);
+                        doc.setTextColor(255, 255, 255);
+                        doc.text(san(pageTitle), 10, 10);
+                        /* Subtitle */
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(7.5);
+                        doc.setTextColor(180, 195, 220);
+                        doc.text(dtStr, 10, 17);
+                        doc.text('Exported by Admin  |  PawHub Admin Panel', 10, 23);
+                        /* Brand */
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(12);
+                        doc.setTextColor(255, 255, 255);
+                        doc.text('Paw', pageW - 36, 11);
+                        doc.setTextColor(16, 185, 129);
+                        doc.text('Hub', pageW - 23, 11);
+                        /* Footer */
+                        doc.setDrawColor(226, 232, 240);
+                        doc.setLineWidth(0.3);
+                        doc.line(8, pageH - F, pageW - 8, pageH - F);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(7);
+                        doc.setTextColor(100, 116, 139);
+                        doc.text('PawHub Admin  |  Confidential', 10, pageH - 4);
+                        doc.text('Page ' + pg, pageW - 10, pageH - 4, { align: 'right' });
+                    },
+
+                    didDrawCell: function (hd) {
+                        if (hd.section !== 'body') return;
+                        var ri = hd.row.index;
+                        var ci = hd.column.index;
+                        if (body[ri] && body[ri][ci] && body[ri][ci].isAvatar) {
+                            avatarMeta.push({
+                                page: doc.internal.getCurrentPageInfo().pageNumber,
+                                x: hd.cell.x, y: hd.cell.y,
+                                w: hd.cell.width, h: hd.cell.height,
+                                src: body[ri][ci].src,
+                            });
+                        }
+                    },
+                });
+
+                /* ── Post-render: draw circular avatar images ── */
+                avatarMeta.forEach(function (m) {
+                    var dataUrl = avatarCache[m.src];
+                    if (!dataUrl) return;
+                    doc.setPage(m.page);
+                    var sz = Math.min(m.w, m.h) - 3;
+                    var cx = m.x + (m.w - sz) / 2;
+                    var cy = m.y + (m.h - sz) / 2;
+                    doc.setFillColor(219, 234, 254);
+                    doc.circle(m.x + m.w / 2, m.y + m.h / 2, sz / 2 + 0.6, 'F');
+                    doc.addImage(dataUrl, 'PNG', cx, cy, sz, sz);
+                });
+
+                /* ── Write real "Page X of Y" on every page ── */
+                var totalPgs = doc.internal.getNumberOfPages();
+                for (var p = 1; p <= totalPgs; p++) {
+                    doc.setPage(p);
+                    doc.setFillColor(255, 255, 255);
+                    doc.rect(pageW - 36, pageH - 9, 28, 7, 'F');
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7);
+                    doc.setTextColor(100, 116, 139);
+                    doc.text('Page ' + p + ' of ' + totalPgs, pageW - 10, pageH - 4, { align: 'right' });
+                }
+
+                /* ── Download ── */
+                var slug = pageTitle.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                doc.save(slug + '_' + now.toISOString().slice(0, 10) + '.pdf');
+            });
+        };  /* end downloadAdminPDF */
+
+        initSmartSorter();
+    });
+
+    function initSmartSorter() {
+        const trigger = document.getElementById('happy-sort-trigger');
+        const optionsDiv = document.getElementById('happy-sort-options');
+        const labelTextSpan = document.getElementById('happy-sort-label');
+        if (!trigger || !optionsDiv) return;
+
+        const table = document.querySelector('#result_list');
+        if (!table) return;
+        const headers = table.querySelectorAll('thead th.sortable');
+
+        let options = [];
+        headers.forEach(th => {
+            const text = th.innerText.trim();
+            const link = th.querySelector('a');
+            if (!link) return;
+
+            const url = new URL(link.href, window.location.origin);
+            // Django uses 'o' param for sorting index
+            const oParam = url.searchParams.get('o');
+            if (!oParam) return;
+
+            const cleanText = text.replace(/^\d+\s*/, '');
+
+            if (cleanText.toLowerCase().includes('date') || cleanText.toLowerCase().includes('time') || cleanText.toLowerCase().includes('created')) {
+                options.push({ label: `Newest ${cleanText}`, val: oParam.startsWith('-') ? oParam : `-${oParam}` });
+                options.push({ label: `Oldest ${cleanText}`, val: oParam.startsWith('-') ? oParam.substring(1) : oParam });
+            } else if (cleanText.toLowerCase().includes('price') || cleanText.toLowerCase().includes('qty') || cleanText.toLowerCase().includes('stock') || cleanText.toLowerCase().includes('amount')) {
+                options.push({ label: `Highest ${cleanText}`, val: oParam.startsWith('-') ? oParam : `-${oParam}` });
+                options.push({ label: `Lowest ${cleanText}`, val: oParam.startsWith('-') ? oParam.substring(1) : oParam });
+            } else {
+                options.push({ label: `${cleanText} (A-Z)`, val: oParam.startsWith('-') ? oParam.substring(1) : oParam });
+                options.push({ label: `${cleanText} (Z-A)`, val: oParam.startsWith('-') ? oParam : `-${oParam}` });
+            }
+        });
+
+        // Dedup options
+        options = Array.from(new Map(options.map(item => [item.label, item])).values());
+
+        optionsDiv.innerHTML = options.map(opt => `
+        <div class="happy-option" data-val="${opt.val}">
+            ${opt.label}
+        </div>
+    `).join('');
+
+        const currentO = new URLSearchParams(window.location.search).get('o');
+        if (currentO) {
+            const activeOpt = options.find(o => o.val === currentO);
+            if (activeOpt) labelTextSpan.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-3 3-3-3"/><path d="m15 6-3-3-3 3"/><path d="M12 3v18"/></svg>
+            ${activeOpt.label}
+        `;
+        }
+
+        trigger.onclick = (e) => {
+            e.stopPropagation();
+            optionsDiv.style.display = optionsDiv.style.display === 'block' ? 'none' : 'block';
+        };
+
+        optionsDiv.querySelectorAll('.happy-option').forEach(opt => {
+            opt.onclick = () => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('o', opt.dataset.val);
+                window.location.href = url.toString();
+            };
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!trigger.contains(e.target) && !optionsDiv.contains(e.target)) {
+                optionsDiv.style.display = 'none';
+            }
+        });
+    }
+
+
+    /* =========================================================
+       SECURITY MODULE: Session Tracking & Auto-Logout
+       ========================================================= */
+    (function () {
+        // 1. Tab Persistence Verification
+        // Tying the session exclusively to the current tab instance per requirements.
+        const isNewTab = !sessionStorage.getItem('pawhub_secure_admin_tab');
+
+        // Determine if this is a page refresh, which we allow to bypass the block.
+        const navEntries = performance.getEntriesByType('navigation');
+        const isReload = navEntries.length > 0 && navEntries[0].type === 'reload';
+
+        if (isNewTab && !isReload && window.location.pathname !== '/admin/login/') {
+            // It's a completely newly opened tab (or the previous tab was closed).
+            // To enforce strict single-tab session security, we assume tab-closure previously happened
+            // and force kill the backend session cookie by hitting logout.
+            sessionStorage.removeItem('pawhub_secure_admin_tab');
+            window.location.replace('/admin/logout/');
+            return;
+        } else {
+            // Tag this tab as legitimate
+            sessionStorage.setItem('pawhub_secure_admin_tab', 'true');
+        }
+
+        // 2. Ten-Minute Inactivity Tracker
+        let inactivityTimer;
+        const TEN_MINUTES = 10 * 60 * 1000;
+
+        const performLogout = () => {
+            sessionStorage.removeItem('pawhub_secure_admin_tab');
+            window.location.replace('/admin/logout/');
+        };
+
+        const resetTimer = () => {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(performLogout, TEN_MINUTES);
+        };
+
+        // Attach to all standard interaction events for PC (Mouse & Keyboard)
+        const triggerEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'click'];
+        triggerEvents.forEach(eventType => {
+            window.addEventListener(eventType, resetTimer, { passive: true });
+        });
+
+        resetTimer(); // Initialize
+    })();
+
+</script>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

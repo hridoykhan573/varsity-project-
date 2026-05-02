@@ -1,0 +1,21 @@
+{% extends "admin/change_list.html" %}
+{% block result_list %}
+<details class="admin-chart-slider" style="margin-bottom: 20px;">
+  <summary style="cursor:pointer; padding:15px 20px; background:linear-gradient(135deg, #ea580c, #f97316); color:#fff; border-radius:12px; font-family:'Outfit', sans-serif; font-size:1.05rem; font-weight:800; list-style:none; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 15px rgba(234,88,12,0.3); outline:none;">
+    <span><i class="fas fa-chart-area" style="margin-right:8px;"></i> View Monthly Adoption Data</span>
+    <i class="fas fa-chevron-down detail-arrow"></i>
+  </summary>
+  <div style="padding-top: 15px;">
+    <div class="admin-chart-container" style="height:280px; margin-bottom:0;">
+      <canvas id="adoptionsChart"></canvas>
+    </div>
+  </div>
+</details>
+
+<style>
+  .admin-chart-slider summary::-webkit-details-marker { display: none; }
+  .admin-chart-slider[open] .detail-arrow { transform: rotate(180deg); }
+  .admin-chart-slider .detail-arrow { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+</style>
+{{ block.super }}
+{% endblock %}

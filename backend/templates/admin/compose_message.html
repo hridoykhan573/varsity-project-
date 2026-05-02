@@ -1,0 +1,467 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    :root {
+        --primary-bg: #f8fafc;
+        --card-bg: #ffffff;
+        --text-label: #64748b;
+        --text-main: #1e293b;
+        --border-light: #e2e8f0;
+        --accent-purple: #7c3aed;
+        --accent-purple-hover: #6d28d9;
+    }
+
+    /* Overall Layout */
+    .messaging-center {
+        max-width: 700px;
+        margin: 40px auto;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .composer-card {
+        background: var(--card-bg);
+        border-radius: 20px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        padding: 32px;
+        border: 1px solid var(--border-light);
+    }
+
+    .field-group {
+        margin-bottom: 32px;
+    }
+
+    .field-label {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: var(--text-label);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    .input-field {
+        width: 100%;
+        padding: 14px 18px;
+        border-radius: 12px;
+        border: 1px solid var(--border-light);
+        font-size: 1rem;
+        color: var(--text-main);
+        transition: all 0.2s;
+        box-sizing: border-box;
+        background: #fff;
+    }
+
+    .input-field:focus {
+        outline: none;
+        border-color: var(--accent-purple);
+        box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+    }
+
+    textarea.input-field {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    /* Section Boxes */
+    .section-box {
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        position: relative;
+    }
+
+    .section-dashed {
+        border: 1px dashed var(--border-light);
+        background: #fdfdfd;
+    }
+
+    .section-solid {
+        border: 1px solid #f1f5f9;
+        background: #f8fafc;
+    }
+
+    .section-title {
+        position: absolute;
+        top: -10px;
+        left: 24px;
+        background: #fdfdfd;
+        padding: 0 10px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: var(--text-label);
+        letter-spacing: 0.05em;
+    }
+    .section-solid .section-title { background: #f8fafc; }
+
+    .section-desc {
+        color: var(--text-label);
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+
+    /* Role Pills */
+    .role-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .role-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: #fff;
+        border: 1px solid var(--border-light);
+        border-radius: 99px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .role-pill:hover {
+        border-color: var(--accent-purple);
+    }
+
+    .role-pill input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent-purple);
+        cursor: pointer;
+    }
+
+    .role-pill.active {
+        border-color: var(--accent-purple);
+        background: rgba(124, 58, 237, 0.05);
+        color: var(--accent-purple);
+    }
+
+    /* Search Component */
+    .search-container {
+        position: relative;
+        display: flex;
+        gap: 10px;
+    }
+
+    .role-filter-select {
+        padding: 10px 15px;
+        border-radius: 10px;
+        border: 1px solid var(--border-light);
+        background: #fff;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-main);
+        cursor: pointer;
+    }
+
+    .search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-light);
+        margin-top: 8px;
+        z-index: 100;
+        display: none;
+        max-height: 250px;
+        overflow-y: auto;
+    }
+
+    .result-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: background 0.2s;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .result-item:hover { background: #f8fafc; }
+    .result-item:last-child { border-bottom: none; }
+
+    .result-type {
+        font-size: 0.7rem;
+        background: #e2e8f0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: #475569;
+        font-weight: 700;
+    }
+
+    /* Selected Recipient Chips */
+    .selected-recipients {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    .recipient-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        background: #ede9fe;
+        color: var(--accent-purple);
+        border-radius: 99px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .recipient-chip i {
+        cursor: pointer;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+    }
+    .recipient-chip i:hover { opacity: 1; }
+
+    /* Footer Buttons */
+    .composer-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 16px;
+        margin-top: 40px;
+    }
+
+    .btn-notification {
+        background: linear-gradient(135deg, var(--accent-purple) 0%, #6d28d9 100%);
+        color: #fff;
+        padding: 14px 28px;
+        border-radius: 14px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+
+    .btn-notification:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(124, 58, 237, 0.4);
+    }
+
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 14px 28px;
+        border-radius: 14px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel:hover { background: #e2e8f0; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="messaging-center">
+    <div class="composer-card">
+        
+        <div class="field-group">
+            <label class="field-label">TITLE</label>
+            <input type="text" id="msgTitle" class="input-field" placeholder="e.g. Scheduled maintenance tonight">
+        </div>
+
+        <div class="field-group">
+            <label class="field-label">MESSAGE</label>
+            <textarea id="msgBody" class="input-field" placeholder="Write a clear, friendly message..."></textarea>
+        </div>
+
+        <div class="section-box section-dashed">
+            <span class="section-title">SEND TO GROUPS</span>
+            <p class="section-desc">Everyone in the role receives the message.</p>
+            <div class="role-grid">
+                {% for role in role_choices %}
+                    <label class="role-pill">
+                        <input type="checkbox" class="role-checkbox" value="{{ role.value }}" data-label="{{ role.label }}">
+                        {{ role.label }}
+                    </label>
+                {% endfor %}
+            </div>
+            
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #f1f5f9;">
+                <p style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 12px;">PORTAL GROUPS</p>
+                <div class="role-grid">
+                    {% for g in portal_groups %}
+                        <label class="role-pill">
+                            <input type="checkbox" class="portal-group-checkbox" value="{{ g.id }}" data-label="{{ g.name }}">
+                            {{ g.name }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="section-box section-solid">
+            <span class="section-title">OR SEND TO SPECIFIC PEOPLE</span>
+            <p class="section-desc">Search by email or name. Click a result to add. You can combine with groups above.</p>
+            
+            <div class="search-container">
+                <input type="text" id="userSearch" class="input-field" placeholder="Type to search..." style="flex: 1;">
+                <select id="roleFilter" class="role-filter-select">
+                    <option value="">All roles</option>
+                    {% for role in role_choices %}
+                        <option value="{{ role.value }}">{{ role.label }}</option>
+                    {% endfor %}
+                </select>
+                <div id="searchResults" class="search-results"></div>
+            </div>
+
+            <div id="selectedRecipients" class="selected-recipients"></div>
+        </div>
+
+        <div class="composer-footer">
+            <a href="{% url 'admin:index' %}" class="btn-cancel">Cancel</a>
+            <button class="btn-notification" id="sendBtn">
+                <i class="fas fa-paper-plane"></i> Send notification
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const searchInput = document.getElementById('userSearch');
+    const roleFilter = document.getElementById('roleFilter');
+    const resultsBox = document.getElementById('searchResults');
+    const selectedBox = document.getElementById('selectedRecipients');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    let selectedRecipients = new Set();
+    let searchTimeout = null;
+
+    // Search logic
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const q = this.value.trim();
+        const role = roleFilter.value;
+
+        if (q.length < 2 && !role) {
+            resultsBox.style.display = 'none';
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            fetch(`{% url 'group_portal:admin_search_recipients' %}?q=${encodeURIComponent(q)}&role=${role}`)
+                .then(res => res.json())
+                .then(data => {
+                    resultsBox.innerHTML = '';
+                    if (data.results.length > 0) {
+                        data.results.forEach(res => {
+                            const div = document.createElement('div');
+                            div.className = 'result-item';
+                            div.innerHTML = `<span>${res.text}</span> <span class="result-type">${res.type}</span>`;
+                            div.onclick = () => addRecipient(res.id, res.text);
+                            resultsBox.appendChild(div);
+                        });
+                        resultsBox.style.display = 'block';
+                    } else {
+                        resultsBox.style.display = 'none';
+                    }
+                });
+        }, 300);
+    });
+
+    roleFilter.addEventListener('change', () => searchInput.dispatchEvent(new Event('input')));
+
+    function addRecipient(id, text) {
+        if (selectedRecipients.has(id)) return;
+        selectedRecipients.add(id);
+        
+        const chip = document.createElement('span');
+        chip.className = 'recipient-chip';
+        chip.id = `chip-${id}`;
+        chip.innerHTML = `${text} <i class="fas fa-times" onclick="removeRecipient('${id}')"></i>`;
+        selectedBox.appendChild(chip);
+        
+        searchInput.value = '';
+        resultsBox.style.display = 'none';
+    }
+
+    window.removeRecipient = function(id) {
+        selectedRecipients.delete(id);
+        const chip = document.getElementById(`chip-${id}`);
+        if (chip) chip.remove();
+    };
+
+    // Close results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.search-container')) {
+            resultsBox.style.display = 'none';
+        }
+    });
+
+    // Send Broadcast logic
+    sendBtn.addEventListener('click', function() {
+        const title = document.getElementById('msgTitle').value.trim();
+        const body = document.getElementById('msgBody').value.trim();
+        
+        const roles = Array.from(document.querySelectorAll('.role-checkbox:checked')).map(cb => cb.value);
+        const portal_groups = Array.from(document.querySelectorAll('.portal-group-checkbox:checked')).map(cb => cb.value);
+        const recipients = Array.from(selectedRecipients);
+
+        if (!title || !body) {
+            alert('Please enter both a title and message.');
+            return;
+        }
+
+        if (roles.length === 0 && portal_groups.length === 0 && recipients.length === 0) {
+            alert('Please select at least one recipient group or individual.');
+            return;
+        }
+
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+        fetch('{% url "group_portal:admin_send_broadcast" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                title: title,
+                message: body,
+                roles: roles,
+                portal_groups: portal_groups,
+                recipients: recipients
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok) {
+                alert(data.msg);
+                window.location.href = "{% url 'admin:index' %}";
+            } else {
+                alert('Error: ' + data.error);
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send notification';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('A technical error occurred.');
+            sendBtn.disabled = false;
+        });
+    });
+</script>
+{% endblock %}

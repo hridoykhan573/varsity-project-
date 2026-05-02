@@ -1,0 +1,1152 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static admin_stats %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/dashboard.css' %}?v=2.1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+<style>
+    .admin-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    /* ── Force light/day mode on New Visitors modal table ── */
+    .ph-broadcast-modal,
+    .ph-visitors-modal-shell {
+        background: #ffffff !important;
+        color: #1e293b !important;
+        color-scheme: light !important;
+    }
+    .ph-visitors-table-wrap {
+        background: #ffffff !important;
+    }
+    .ph-visitors-table {
+        background: #ffffff !important;
+        color-scheme: light !important;
+    }
+    .ph-visitors-table thead,
+    .ph-visitors-table thead tr,
+    .ph-visitors-table th {
+        background: #f8fafc !important;
+        color: #475569 !important;
+        border-bottom: 2px solid #e2e8f0 !important;
+        font-size: 0.72rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.045em !important;
+        padding: 0.65rem 0.85rem !important;
+        white-space: nowrap !important;
+    }
+    .ph-visitors-table tbody tr,
+    .ph-visitors-table tbody tr td {
+        background: #ffffff !important;
+        color: #1e293b !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        vertical-align: middle !important;
+        padding: 0.6rem 0.85rem !important;
+    }
+    .ph-visitors-table tbody tr:nth-child(even) td {
+        background: #fafbff !important;
+    }
+    .ph-visitors-table tbody tr:hover td {
+        background: #f0f9ff !important;
+    }
+    .ph-visitors-table tbody tr:last-child td {
+        border-bottom: none !important;
+    }
+    /* Column widths — no horizontal scroll */
+    .ph-visitors-table { table-layout: fixed; }
+    .ph-visitors-table th:nth-child(1),
+    .ph-visitors-table td:nth-child(1) { width: 28%; }
+    .ph-visitors-table th:nth-child(2),
+    .ph-visitors-table td:nth-child(2) { width: 20%; }
+    .ph-visitors-table th:nth-child(3),
+    .ph-visitors-table td:nth-child(3) { width: 18%; text-align: center !important; }
+    .ph-visitors-table th:nth-child(4),
+    .ph-visitors-table td:nth-child(4) { width: 22%; white-space: nowrap; }
+    .ph-visitors-table th:nth-child(5),
+    .ph-visitors-table td:nth-child(5) { width: 12%; text-align: right !important; white-space: nowrap; }
+    /* Role badge */
+    .ph-visitors-role {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0.2rem 0.6rem !important;
+        border-radius: 8px !important;
+        background: #ecfdf5 !important;
+        color: #047857 !important;
+        font-size: 0.73rem !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+    }
+    .ph-visitors-admin-link {
+        color: #0d9488 !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
+    }
+    .ph-visitors-admin-link:hover {
+        text-decoration: underline !important;
+    }
+    /* Modal head text */
+    .ph-broadcast-modal__head h2 { color: #0f172a !important; }
+    .ph-broadcast-lead { color: #64748b !important; }
+    .ph-visitors-stats-line { color: #64748b !important; }
+</style>
+{% endblock %}
+
+{% block coltype %}colL{% endblock %}
+
+{% block nav-sidebar %}{% endblock %}
+
+{% block sidebar %}{% endblock %}
+
+{% block header %}{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+{% block pretitle %}{% endblock %}
+{% block content_title %}{% endblock %}
+
+{% block bodyclass %}{{ block.super }} dashboard-light{% endblock %}
+
+{% block content %}
+{% get_admin_stats as stats %}
+<div class="app-container">
+    <!-- top bar -->
+    <div class="top-bar">
+        <div class="logo-area" style="display: flex; align-items: center; gap: 20px;">
+            <!-- Quick Profile Badge Integration -->
+            <a href="{% url 'admin:accounts_customuser_change' user.id %}" class="admin-quick-profile" title="Edit Profile Settings">
+                <div class="profile-thumb-wrapper">
+                    <img src="{% if user.avatar %}{{ user.avatar.url }}{% else %}{% static 'admin/custom/profile_ashik.png' %}{% endif %}" alt="Profile" class="profile-thumb-img">
+                </div>
+                <span class="profile-name-label" style="color: #ffffff !important; font-weight: 800; font-size: 1.05rem;">{{ user.get_full_name|default:user.username|truncatechars:18 }}</span>
+            </a>
+
+            <div>
+                <h1 style="margin:0;"><i class="fas fa-paw"></i> PawHub Admin</h1>
+                <span style="font-size: 0.85rem; opacity: 0.8; margin-left: 2px;">petcare ecosystem · central control</span>
+            </div>
+        </div>
+        <div class="admin-actions">
+            <button type="button" class="ph-broadcast-btn" id="phBroadcastOpen" aria-haspopup="dialog" title="Send in-app notification to users, shelter staff, and sellers">
+                <span class="ph-broadcast-btn__glow" aria-hidden="true"></span>
+                <span class="ph-broadcast-btn__inner">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Send message</span>
+                </span>
+            </button>
+            <button type="button" class="ph-visitors-btn" id="phVisitorsOpen" aria-haspopup="dialog" title="View recently registered users">
+                <span class="ph-visitors-btn__glow" aria-hidden="true"></span>
+                <span class="ph-visitors-btn__inner">
+                    <i class="fas fa-user-plus"></i>
+                    <span>New visitors</span>
+                </span>
+            </button>
+            <a href="/" class="view-site-link"><i class="fas fa-eye"></i> View site</a>
+            <span class="divider">/</span>
+            <a href="{% url 'admin:password_change' %}" class="change-password-link"><i class="fas fa-key"></i> Change password</a>
+            <span class="divider">/</span>
+            <form class="admin-logout-form" method="post" action="{% url 'admin:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="logout-link"><i class="fas fa-sign-out-alt"></i> Log out</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Search / Filter bar (Moved up for direct access) -->
+    <div class="filter-wrapper" style="margin-bottom: 1.5rem; max-width: 400px;">
+        <i class="fas fa-search"></i>
+        <input type="text" id="filterInput" placeholder="Quick find module..." autocomplete="off">
+    </div>
+
+    <!-- stats cards with soft status colors -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-info">
+                <h4>Total accounts</h4>
+                <div class="number">{{ stats.total_accounts|default:"0" }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-paw"></i></div>
+            <div class="stat-info">
+                <h4>Registered pets</h4>
+                <div class="number">{{ stats.registered_pets|default:"0" }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+            <div class="stat-info">
+                <h4>Active bookings</h4>
+                <div class="number">{{ stats.active_bookings|default:"0" }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#ccfbf1;color:#0d9488;"><i class="fas fa-stethoscope"></i></div>
+            <div class="stat-info">
+                <h4>Doctor appointments</h4>
+                <div class="number">{{ stats.doctor_appointments|default:"0" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modules grid -->
+    <div id="modulesContainer" class="modules-grid">
+        <!-- Render cards directly for better Django integration while keeping JS filter -->
+        
+        <!-- Accounts -->
+        <div class="card" data-name="accounts">
+            <div class="card-header">
+                <i class="fas fa-user-md"></i>
+                <h3>Staff, Sellers & Vets</h3>
+            </div>
+            <div class="action-buttons" style="flex-direction: column; gap: 10px;">
+                <div style="display: flex; gap: 8px;">
+                    {% if perms.accounts.add_customuser %}
+                    <a href="{% url 'admin:accounts_customuser_add' %}" class="btn btn-add" style="flex: 1;"><i class="fas fa-plus-circle"></i> ADD NEW</a>
+                    {% endif %}
+                </div>
+                <!-- Role Specific Management -->
+                <div class="role-row">
+                    <a href="{% url 'admin:accounts_customuser_changelist' %}?role__exact=shelter_staff" class="role-btn role-btn--blue">
+                        <i class="fas fa-hospital-user"></i> SHELTER STAFF
+                    </a>
+                    <a href="{% url 'admin:accounts_customuser_changelist' %}?role__exact=seller" class="role-btn role-btn--green">
+                        <i class="fas fa-store"></i> SELLERS
+                    </a>
+                </div>
+                <!-- Doctor Specific Management -->
+                <div class="role-row">
+                    <a href="{% url 'admin:accounts_customuser_changelist' %}?role__exact=doctor" class="role-btn" style="color: #0d9488; background: #ccfbf1; border-color: #99f6e4;">
+                        <i class="fas fa-stethoscope"></i> V. DOCTORS (USERS)
+                    </a>
+                    <a href="{% url 'admin:veterinary_doctorprofile_changelist' %}" class="role-btn" style="color: #0f766e; background: #e0f2fe; border-color: #bae6fd;">
+                        <i class="fas fa-file-medical-alt"></i> DOCTOR PROFILES
+                    </a>
+                </div>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 10px; color:#94A3B8;"><i class="fas fa-shield-alt"></i> role-based management</div>
+        </div>
+
+        <!-- Users -->
+        <div class="card" data-name="users">
+            <div class="card-header">
+                <i class="fas fa-users"></i>
+                <h3>Users</h3>
+            </div>
+            <div class="action-buttons" style="flex-direction: column; gap: 8px;">
+                {% if perms.accounts.add_customuser %}
+                <a href="{% url 'admin:accounts_customuser_add' %}?role=owner" class="btn btn-add btn-block" style="padding: 12px; font-size: 0.8rem; font-weight: 800;">
+                    <i class="fas fa-user-plus"></i> ADD GENERAL USER
+                </a>
+                {% endif %}
+                <a href="{% url 'admin:accounts_customuser_changelist' %}?role__exact=owner" class="btn btn-change btn-block" style="font-size: 0.72rem; padding: 10px;">
+                    <i class="fas fa-users"></i> VIEW ALL GENERAL USERS
+                </a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 10px; color:#94A3B8;"><i class="fas fa-user-friends"></i> registered users pool</div>
+        </div>
+
+
+        <!-- Adoptions -->
+        <div class="card" data-name="adoptions">
+            <div class="card-header">
+                <i class="fas fa-hand-holding-heart"></i>
+                <h3>Adoptions</h3>
+            </div>
+            <div class="action-buttons">
+                {% if perms.adoptions.add_adoptionrequest %}
+                <a href="{% url 'admin:adoptions_adoptionrequest_add' %}" class="btn btn-add"><i class="fas fa-plus-circle"></i> ADD</a>
+                {% endif %}
+                <a href="{% url 'admin:adoptions_adoptionrequest_changelist' %}" class="btn btn-change"><i class="fas fa-edit"></i> CHANGE</a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 12px; color:#94A3B8;"><i class="fas fa-dot-circle"></i> quick management</div>
+        </div>
+
+        <!-- Adoption Requests -->
+        <div class="card" data-name="adoption requests">
+            <div class="card-header">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>Adoption Requests</h3>
+            </div>
+            <div class="action-buttons">
+                <a href="{% url 'admin:adoptions_adoptionrequest_add' %}" class="btn btn-add"><i class="fas fa-plus-circle"></i> ADD</a>
+                <a href="{% url 'admin:adoptions_adoptionrequest_changelist' %}" class="btn btn-change"><i class="fas fa-edit"></i> CHANGE</a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 12px; color:#94A3B8;"><i class="fas fa-dot-circle"></i> quick management</div>
+        </div>
+
+        <!-- Bookings -->
+        <div class="card" data-name="bookings">
+            <div class="card-header">
+                <i class="fas fa-calendar-alt"></i>
+                <h3>Bookings</h3>
+            </div>
+            <div class="action-buttons">
+                {% if perms.bookings.add_booking %}
+                <a href="{% url 'admin:bookings_booking_add' %}" class="btn btn-add"><i class="fas fa-plus-circle"></i> ADD</a>
+                {% endif %}
+                <a href="{% url 'admin:bookings_booking_changelist' %}" class="btn btn-change"><i class="fas fa-edit"></i> CHANGE</a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 12px; color:#94A3B8;"><i class="fas fa-dot-circle"></i> quick management</div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="card" data-name="notifications">
+            <div class="card-header">
+                <i class="fas fa-bell"></i>
+                <h3>Notifications</h3>
+            </div>
+            <div class="action-buttons">
+                {% if perms.notifications.add_notification %}
+                <a href="{% url 'admin:notifications_notification_add' %}" class="btn btn-add"><i class="fas fa-plus-circle"></i> ADD</a>
+                {% endif %}
+                <a href="{% url 'admin:notifications_notification_changelist' %}" class="btn btn-change"><i class="fas fa-edit"></i> CHANGE</a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 12px; color:#94A3B8;"><i class="fas fa-dot-circle"></i> quick management</div>
+        </div>
+
+        <!-- Payments -->
+        <div class="card" data-name="payments">
+            <div class="card-header">
+                <i class="fas fa-credit-card"></i>
+                <h3>Payments</h3>
+            </div>
+            <div class="action-buttons">
+                {% if perms.payments.add_payment %}
+                <a href="{% url 'admin:payments_payment_add' %}" class="btn btn-add"><i class="fas fa-plus-circle"></i> ADD</a>
+                {% endif %}
+                <a href="{% url 'admin:payments_payment_changelist' %}" class="btn btn-change"><i class="fas fa-edit"></i> CHANGE</a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 12px; color:#94A3B8;"><i class="fas fa-dot-circle"></i> quick management</div>
+        </div>
+
+        <!-- Pets -->
+        <div class="card" data-name="pets">
+            <div class="card-header">
+                <i class="fas fa-dog"></i>
+                <h3>Pets</h3>
+            </div>
+            <div class="action-buttons">
+                {% if perms.pets.add_pet %}
+                <a href="{% url 'admin:pets_pet_add' %}" class="btn btn-add"><i class="fas fa-plus-circle"></i> ADD</a>
+                {% endif %}
+                <a href="{% url 'admin:pets_pet_changelist' %}" class="btn btn-change"><i class="fas fa-edit"></i> CHANGE</a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 12px; color:#94A3B8;"><i class="fas fa-dot-circle"></i> quick management</div>
+        </div>
+
+        <!-- Pet Shop Products -->
+        <div class="card" data-name="shop products">
+            <div class="card-header">
+                <i class="fas fa-shopping-basket"></i>
+                <h3>Pet Shop Products</h3>
+            </div>
+            <div class="action-buttons" style="flex-direction: column; gap: 8px;">
+                <a href="{% url 'admin:products_product_changelist' %}?category__exact=food" class="btn btn-add btn-block" style="padding: 12px; font-size: 0.8rem; font-weight: 800; border-radius: 8px;">
+                    <i class="fas fa-utensils"></i> FOOD PRODUCTS ({{ stats.total_food_products|default:"0" }})
+                </a>
+                <a href="{% url 'admin:products_product_changelist' %}?category__exact=accessories" class="btn btn-change btn-block" style="padding: 12px; font-size: 0.8rem; font-weight: 800; border-radius: 8px;">
+                    <i class="fas fa-bone"></i> ACCESSORIES ({{ stats.total_accessories|default:"0" }})
+                </a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 10px; color:#94A3B8;"><i class="fas fa-store"></i> seller inventory management</div>
+        </div>
+
+        <!-- Health Records -->
+        <div class="card" data-name="health records">
+            <div class="card-header">
+                <i class="fas fa-notes-medical"></i>
+                <h3>Health Records</h3>
+            </div>
+            <div class="action-buttons">
+                {% if perms.pets.add_healthrecord %}
+                <a href="{% url 'admin:pets_healthrecord_add' %}" class="btn btn-add"><i class="fas fa-plus-circle"></i> ADD</a>
+                {% endif %}
+                <a href="{% url 'admin:pets_healthrecord_changelist' %}" class="btn btn-change"><i class="fas fa-edit"></i> CHANGE</a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 12px; color:#94A3B8;"><i class="fas fa-dot-circle"></i> quick management</div>
+        </div>
+
+        <!-- Reviews -->
+        <div class="card" data-name="reviews">
+            <div class="card-header">
+                <i class="fas fa-star"></i>
+                <h3>Reviews</h3>
+            </div>
+            <div class="action-buttons">
+                {% if perms.reviews.add_review %}
+                <a href="{% url 'admin:reviews_review_add' %}" class="btn btn-add"><i class="fas fa-plus-circle"></i> ADD</a>
+                {% endif %}
+                <a href="{% url 'admin:reviews_review_changelist' %}" class="btn btn-change"><i class="fas fa-edit"></i> CHANGE</a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 12px; color:#94A3B8;"><i class="fas fa-dot-circle"></i> quick management</div>
+        </div>
+
+        <!-- Shelters -->
+        <div class="card" data-name="shelters">
+            <div class="card-header">
+                <i class="fas fa-home"></i>
+                <h3>Shelters</h3>
+            </div>
+            <div class="action-buttons">
+                {% if perms.shelters.add_shelter %}
+                <a href="{% url 'admin:shelters_shelter_add' %}" class="btn btn-add"><i class="fas fa-plus-circle"></i> ADD</a>
+                {% endif %}
+                <a href="{% url 'admin:shelters_shelter_changelist' %}" class="btn btn-change"><i class="fas fa-edit"></i> CHANGE</a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 12px; color:#94A3B8;"><i class="fas fa-dot-circle"></i> quick management</div>
+        </div>
+
+        <!-- Services -->
+        <div class="card" data-name="services">
+            <div class="card-header">
+                <i class="fas fa-concierge-bell"></i>
+                <h3>Services</h3>
+            </div>
+            <div class="action-buttons">
+                {% if perms.shelters.add_service %}
+                <a href="{% url 'admin:shelters_service_add' %}" class="btn btn-add"><i class="fas fa-plus-circle"></i> ADD</a>
+                {% endif %}
+                <a href="{% url 'admin:shelters_service_changelist' %}" class="btn btn-change"><i class="fas fa-edit"></i> CHANGE</a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 12px; color:#94A3B8;"><i class="fas fa-dot-circle"></i> quick management</div>
+        </div>
+
+        <!-- Unified Messaging Center -->
+        <div class="card" data-name="user complaints box">
+            <div class="card-header" style="justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-comment-dots"></i>
+                    <h3>Messaging Center</h3>
+                </div>
+                {% if stats.unread_portal_messages > 0 %}
+                <span style="background: #f43f5e; color: white; border-radius: 20px; padding: 2px 8px; font-size: 0.7rem; font-weight: 800; animation: pulse 2s infinite;">
+                    {{ stats.unread_portal_messages }} NEW
+                </span>
+                {% endif %}
+            </div>
+            <div class="action-buttons" style="flex-direction: column; gap: 10px;">
+                <!-- Standard Complaints -->
+                <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                    <span style="font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase;">User Complaints</span>
+                    <div style="display: flex; gap: 8px;">
+                        <a href="{% url 'admin:complaints_complaint_changelist' %}" class="btn btn-change" style="flex: 1;"><i class="fas fa-list"></i> VIEW LIST</a>
+                        {% if perms.complaints.add_complaint %}
+                        <a href="{% url 'admin:complaints_complaint_add' %}" class="btn btn-add"><i class="fas fa-plus"></i></a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Portal Member Inquiries -->
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Portal Inquiries</span>
+                    <a href="{% url 'admin:group_portal_portalmessage_changelist' %}" class="btn btn-view" style="width: 100%; display: flex; justify-content: space-between;">
+                        <span><i class="fas fa-envelope-open-text"></i> MEMBER MESSAGES</span>
+                        {% if stats.unread_portal_messages > 0 %}
+                        <i class="fas fa-circle" style="color: #f43f5e; font-size: 0.6rem;"></i>
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 12px; color:#94A3B8;"><i class="fas fa-dot-circle"></i> unified reports & feedback</div>
+        </div>
+
+        <!-- Groups -->
+        <div class="card" data-name="groups">
+            <div class="card-header">
+                <i class="fas fa-layer-group"></i>
+                <h3>Groups</h3>
+            </div>
+            <div class="action-buttons" style="flex-direction: column; gap: 8px;">
+                <div style="display: flex; gap: 8px;">
+                    {% if perms.auth.add_group %}
+                    <a href="{% url 'admin:auth_group_add' %}" class="btn btn-add" style="flex: 1;"><i class="fas fa-plus-circle"></i> ADD</a>
+                    {% endif %}
+                    <a href="{% url 'admin:auth_group_changelist' %}" class="btn btn-change" style="flex: 1;"><i class="fas fa-edit"></i> CHANGE</a>
+                </div>
+                <a href="/group/login/" target="_blank" class="btn btn-view" style="width: 100%;"><i class="fas fa-external-link-alt"></i> GROUP PORTAL LOGIN</a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 12px; color:#94A3B8;"><i class="fas fa-id-badge"></i> portal test access</div>
+        </div>
+
+        <!-- Authentication & Authorization -->
+        <div class="card" data-name="authentication & authorization">
+            <div class="card-header">
+                <i class="fas fa-shield-alt"></i>
+                <h3>Group Portal Management</h3>
+            </div>
+            <div class="action-buttons" style="flex-direction: column; gap: 8px;">
+                <a href="{% url 'admin:group_portal_groupmember_changelist' %}" class="btn btn-change" style="padding: 10px; font-size: 0.8rem; font-weight: 800;">
+                    <i class="fas fa-users-cog"></i> MANAGE GROUP MEMBERS
+                </a>
+                <a href="{% url 'admin:group_portal_groupmemberactivity_changelist' %}" class="btn btn-view" style="padding: 10px; font-size: 0.8rem; font-weight: 800;">
+                    <i class="fas fa-history"></i> VIEW ACTIVITY LOG
+                </a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 10px; color:#94A3B8;"><i class="fas fa-lock"></i> authenticate members & track</div>
+        </div>
+
+        <!-- Doctor Appointments -->
+        <div class="card" data-name="appointments doctor schedule slots">
+            <div class="card-header">
+                <i class="fas fa-calendar-check"></i>
+                <h3>Doctor Appointments</h3>
+            </div>
+            <div class="action-buttons" style="flex-direction: column; gap: 8px;">
+                <a href="{% url 'admin:appointments_appointment_changelist' %}" class="btn btn-add btn-block" style="padding: 12px; font-size: 0.8rem; font-weight: 800; background: #0d9488; border-color: #0d9488;">
+                    <i class="fas fa-calendar-check"></i> VIEW ALL APPOINTMENTS
+                </a>
+                <div style="display: flex; gap: 8px;">
+                    <a href="{% url 'admin:appointments_doctoravailability_changelist' %}" class="btn btn-change" style="flex: 1; font-size: 0.72rem;">
+                        <i class="fas fa-clock"></i> AVAILABILITY
+                    </a>
+                    <a href="{% url 'admin:appointments_doctordateschedule_changelist' %}" class="btn btn-view" style="flex: 1; font-size: 0.72rem; background: #f1f5f9; color: #475569; border-color: #e2e8f0;">
+                        <i class="fas fa-calendar-day"></i> SPECIAL DATES
+                    </a>
+                </div>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 10px; color:#94A3B8;"><i class="fas fa-tools"></i> manual booking control</div>
+        </div>
+
+        <!-- Doctor Activity Control -->
+        <div class="card" data-name="doctor activity control prescriptions consultations emergency fees appointments">
+            <div class="card-header" style="background: linear-gradient(135deg, #f0fdf4, #dcfce7);">
+                <i class="fas fa-stethoscope" style="color: #059669;"></i>
+                <h3 style="color: #065f46;">Doctor Activity Control</h3>
+            </div>
+            <div class="action-buttons" style="flex-direction: column; gap: 8px;">
+                <!-- Appointments -->
+                <a href="{% url 'admin:appointments_appointment_changelist' %}"
+                   class="btn btn-view"
+                   style="width: 100%; background: #ccfbf1; color: #0d9488; border-color: #99f6e4; font-size: 0.78rem; font-weight: 800;">
+                    <i class="fas fa-calendar-check"></i> DOCTOR APPOINTMENTS
+                </a>
+                <!-- Prescriptions -->
+                <a href="{% url 'admin:veterinary_prescription_changelist' %}"
+                   class="btn btn-view"
+                   style="width: 100%; background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; font-size: 0.78rem; font-weight: 800;">
+                    <i class="fas fa-file-prescription"></i> PRESCRIPTIONS
+                </a>
+                <!-- Consultations / Emergencies -->
+                <a href="{% url 'admin:veterinary_emergencyrequest_changelist' %}"
+                   class="btn btn-view"
+                   style="width: 100%; background: #fff7ed; color: #c2410c; border-color: #fed7aa; font-size: 0.78rem; font-weight: 800;">
+                    <i class="fas fa-ambulance"></i> CONSULTATIONS & EMERGENCIES
+                </a>
+                <!-- Doctor Profiles / Fees -->
+                <a href="{% url 'admin:veterinary_doctorprofile_changelist' %}"
+                   class="btn btn-view"
+                   style="width: 100%; background: #f0fdf4; color: #15803d; border-color: #bbf7d0; font-size: 0.78rem; font-weight: 800;">
+                    <i class="fas fa-user-md"></i> DOCTOR PROFILES & FEES
+                </a>
+            </div>
+            <div style="font-size:0.7rem; margin-top: 10px; color:#94A3B8;"><i class="fas fa-heartbeat"></i> full medical activity control</div>
+        </div>
+
+    </div>
+
+    <!-- Message & Support Inbox (Slide Type) -->
+    <div class="inbox-card">
+        <div class="inbox-header">
+            <h3><i class="fas fa-paper-plane text-primary"></i> Recent Messages & Support Inbox</h3>
+            <div class="slider-nav">
+                <div class="nav-btn" onclick="prevSlide()"><i class="fas fa-chevron-left"></i></div>
+                <div class="nav-btn" onclick="nextSlide()"><i class="fas fa-chevron-right"></i></div>
+                <a href="{% url 'admin:complaints_complaint_changelist' %}" class="btn btn-change" style="margin-left:10px;">
+                    <i class="fas fa-external-link-alt"></i> View All
+                </a>
+            </div>
+        </div>
+        
+        <div class="slider-outer">
+            <div class="slider-track" id="messageTrack">
+                <!-- Slide 1 -->
+                <div class="message-slide">
+                    <div class="slide-content">
+                        <div class="slide-main">
+                            <div class="slide-info">
+                                <h4>Ashik Hasan</h4>
+                                <span class="badge badge-user">User</span>
+                            </div>
+                            <div class="slide-subject">"I'm having trouble with the pet adoption form. The upload button isn't responding on my mobile device."</div>
+                            <div class="slide-meta">
+                                <span><i class="fas fa-clock"></i> Today, 10:45 AM</span>
+                                <span><i class="fas fa-tag"></i> Adoption Inquiry</span>
+                            </div>
+                        </div>
+                        <div class="status-pill status-pending"><i class="fas fa-clock"></i> Pending</div>
+                    </div>
+                </div>
+
+                <!-- Slide 2 -->
+                <div class="message-slide">
+                    <div class="slide-content">
+                        <div class="slide-main">
+                            <div class="slide-info">
+                                <h4>Happy Tails Shelter</h4>
+                                <span class="badge badge-shelter">Shelter</span>
+                            </div>
+                            <div class="slide-subject">"Update: Health records for 'Luna' (Golden Retriever) have been verified by our local vet."</div>
+                            <div class="slide-meta">
+                                <span><i class="fas fa-calendar-alt"></i> Yesterday, 4:12 PM</span>
+                                <span><i class="fas fa-heartbeat"></i> Health Update</span>
+                            </div>
+                        </div>
+                        <div class="status-pill status-resolved"><i class="fas fa-check-circle"></i> Resolved</div>
+                    </div>
+                </div>
+
+                <!-- Slide 3 -->
+                <div class="message-slide">
+                    <div class="slide-content">
+                        <div class="slide-main">
+                            <div class="slide-info">
+                                <h4>PetMart Seller</h4>
+                                <span class="badge badge-seller">Seller</span>
+                            </div>
+                            <div class="slide-subject">"Withdrawal request for order #8421. Funds have been pending for more than 48 hours."</div>
+                            <div class="slide-meta">
+                                <span><i class="fas fa-history"></i> Oct 02, 2023</span>
+                                <span><i class="fas fa-wallet"></i> Finance</span>
+                            </div>
+                        </div>
+                        <div class="status-pill status-pending"><i class="fas fa-clock"></i> Pending</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty state for filter -->
+    <div id="noResults" class="no-results" style="display: none;">
+        <i class="fas fa-filter" style="font-size: 2rem; opacity: 0.6;"></i><br/>
+        No modules match “<span id="searchTerm"></span>”<br/>
+        <span style="font-size:0.8rem;">Try “pets”, “bookings” or “users”</span>
+    </div>
+
+    <footer>
+        <i class="fas fa-leaf"></i> PawHub · gentle management for compassionate care · all actions are authenticated
+    </footer>
+</div>
+
+<!-- Admin broadcast modal (in-app notifications) -->
+<div id="phBroadcastOverlay" class="ph-broadcast-overlay" hidden>
+    <div class="ph-broadcast-modal" role="dialog" aria-modal="true" aria-labelledby="phBroadcastTitle">
+        {% csrf_token %}
+        <button type="button" class="ph-broadcast-close" id="phBroadcastClose" aria-label="Close">&times;</button>
+        <div class="ph-broadcast-modal__head">
+            <div class="ph-broadcast-modal__icon"><i class="fas fa-bullhorn"></i></div>
+            <div>
+                <h2 id="phBroadcastTitle">Send platform message</h2>
+                <p class="ph-broadcast-lead">Deliver an in-app notification (bell on the main site) to whole groups and/or hand-picked accounts.</p>
+            </div>
+        </div>
+        <label class="ph-broadcast-label" for="phBroadcastTitleInput">Title</label>
+        <input type="text" id="phBroadcastTitleInput" class="ph-broadcast-input" maxlength="200" placeholder="e.g. Scheduled maintenance tonight" autocomplete="off" />
+        <label class="ph-broadcast-label" for="phBroadcastBody">Message</label>
+        <textarea id="phBroadcastBody" class="ph-broadcast-textarea" rows="5" maxlength="2000" placeholder="Write a clear, friendly message…"></textarea>
+        <fieldset class="ph-broadcast-audience">
+            <legend>Send to groups</legend>
+            <p class="ph-broadcast-hint">Everyone in the role receives the message.</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                <label class="ph-audience-chip"><input type="checkbox" name="ph_aud" value="owner" checked /> <span>Pet owners</span></label>
+                <label class="ph-audience-chip"><input type="checkbox" name="ph_aud" value="shelter_staff" /> <span>Shelter staff</span></label>
+                <label class="ph-audience-chip"><input type="checkbox" name="ph_aud" value="seller" /> <span>Sellers</span></label>
+            </div>
+            
+            <p class="ph-broadcast-hint" style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;"><strong>Portal Groups:</strong> (managed in Group Portal)</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;" id="phPortalGroupsWrap">
+                <!-- Dynamically populated or hardcoded for common ones -->
+                <i class="fas fa-spinner fa-spin" style="font-size: 0.8rem; color: #94a3b8;"></i>
+            </div>
+        </fieldset>
+        <div class="ph-individual-block">
+            <label class="ph-broadcast-label" for="phUserSearch">Or send to specific people</label>
+            <p class="ph-broadcast-hint">Search by email or name. Click a result to add. You can combine with groups above.</p>
+            <div class="ph-user-search-row">
+                <input type="text" id="phUserSearch" class="ph-broadcast-input" placeholder="Type to search…" autocomplete="off" />
+                <select id="phUserRoleFilter" class="ph-broadcast-select" aria-label="Filter by role">
+                    <option value="">All roles</option>
+                    <option value="owner">Pet owners</option>
+                    <option value="shelter_staff">Shelter staff</option>
+                    <option value="seller">Sellers</option>
+                </select>
+            </div>
+            <div id="phUserSearchResults" class="ph-user-search-results" hidden></div>
+            <div id="phSelectedRecipients" class="ph-selected-recipients"></div>
+        </div>
+        <div class="ph-broadcast-actions">
+            <button type="button" class="ph-btn ph-btn--ghost" id="phBroadcastCancel">Cancel</button>
+            <button type="button" class="ph-btn ph-btn--send" id="phBroadcastSubmit">
+                <i class="fas fa-paper-plane"></i> Send notification
+            </button>
+        </div>
+        <div id="phBroadcastStatus" class="ph-broadcast-status" hidden role="status"></div>
+    </div>
+</div>
+
+<!-- New visitors (recent sign-ups) -->
+<div id="phVisitorsOverlay" class="ph-broadcast-overlay" hidden>
+    <div class="ph-broadcast-modal ph-visitors-modal-shell" role="dialog" aria-modal="true" aria-labelledby="phVisitorsTitle" style="max-width: min(1020px, 96vw); width: 96vw; max-height: 92vh;">
+        <button type="button" class="ph-broadcast-close" id="phVisitorsClose" aria-label="Close">&times;</button>
+        <div class="ph-broadcast-modal__head">
+            <div class="ph-broadcast-modal__icon ph-visitors-modal-icon"><i class="fas fa-user-clock"></i></div>
+            <div>
+                <h2 id="phVisitorsTitle">New visitors</h2>
+                <p class="ph-broadcast-lead">Recently registered accounts (pet owners, shelter staff, sellers). Admin accounts are not listed.</p>
+                <p id="phVisitorsStats" class="ph-visitors-stats-line"></p>
+            </div>
+        </div>
+        <div class="ph-visitors-toolbar">
+            <label class="ph-visitors-toolbar-label" for="phVisitorsDays">Show sign-ups from</label>
+            <select id="phVisitorsDays" class="ph-broadcast-select ph-visitors-days-select">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+            </select>
+        </div>
+        <div id="phVisitorsLoading" class="ph-visitors-loading" hidden>Loading…</div>
+        <div id="phVisitorsError" class="ph-broadcast-status ph-broadcast-status--err" hidden role="alert"></div>
+        <div class="ph-visitors-table-wrap">
+            <table class="ph-visitors-table" id="phVisitorsTable">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="phVisitorsTbody"></tbody>
+            </table>
+            <p id="phVisitorsEmpty" class="ph-visitors-empty" hidden>No sign-ups in this period.</p>
+        </div>
+        <div class="ph-broadcast-actions">
+            <button type="button" class="ph-btn ph-btn--ghost" id="phVisitorsCloseBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const filterInput = document.getElementById("filterInput");
+    const cards = document.querySelectorAll(".modules-grid .card");
+    const modulesContainer = document.getElementById("modulesContainer");
+    const noResults = document.getElementById("noResults");
+    const searchTerm = document.getElementById("searchTerm");
+
+    filterInput.addEventListener("input", (e) => {
+        const value = e.target.value.toLowerCase().trim();
+        let found = 0;
+
+        cards.forEach(card => {
+            const name = card.getAttribute("data-name");
+            if (name.includes(value)) {
+                card.style.display = "block";
+                found++;
+            } else {
+                card.style.display = "none";
+            }
+        });
+
+        if (found === 0) {
+            modulesContainer.style.display = "none";
+            noResults.style.display = "block";
+            searchTerm.textContent = value;
+        } else {
+            modulesContainer.style.display = "grid";
+            noResults.style.display = "none";
+        }
+    });
+
+    let currentSlide = 0;
+    const track = document.getElementById("messageTrack");
+    const totalSlides = document.querySelectorAll(".message-slide").length;
+
+    function updateSlider() {
+        track.style.transform = `translateX(-${currentSlide * 100}%)`;
+    }
+
+    function nextSlide() {
+        if (currentSlide < totalSlides - 1) {
+            currentSlide++;
+        } else {
+            currentSlide = 0; // Wrap around
+        }
+        updateSlider();
+    }
+
+    function prevSlide() {
+        if (currentSlide > 0) {
+            currentSlide--;
+        } else {
+            currentSlide = totalSlides - 1; // Wrap around
+        }
+        updateSlider();
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    /* —— Admin broadcast message —— */
+    function phGetCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    (function () {
+        var overlay = document.getElementById('phBroadcastOverlay');
+        var openBtn = document.getElementById('phBroadcastOpen');
+        var closeBtn = document.getElementById('phBroadcastClose');
+        var cancelBtn = document.getElementById('phBroadcastCancel');
+        var submitBtn = document.getElementById('phBroadcastSubmit');
+        var titleIn = document.getElementById('phBroadcastTitleInput');
+        var bodyIn = document.getElementById('phBroadcastBody');
+        var statusEl = document.getElementById('phBroadcastStatus');
+        var searchIn = document.getElementById('phUserSearch');
+        var roleFilter = document.getElementById('phUserRoleFilter');
+        var searchResultsEl = document.getElementById('phUserSearchResults');
+        var selectedWrap = document.getElementById('phSelectedRecipients');
+        var groupWrap = document.getElementById('phPortalGroupsWrap');
+        if (!overlay || !openBtn) return;
+
+        var selectedMap = {};
+        var searchTimer = null;
+
+        function fetchPortalGroups() {
+            if (!groupWrap) return;
+            // We'll reuse the admin_messaging_center search view or a simple list view.
+            // Since we don't have a dedicated "list groups" API yet, we'll use the search with no query if possible,
+            // or I can just add a small endpoint. Actually, I already added one to group_portal views.
+            fetch('/group/admin-messaging/search/?q=', { credentials: 'same-origin' })
+                .then(r => r.json())
+                .then(data => {
+                    // This endpoint returns users/members. I need a "Groups" list.
+                    // Let's assume for now we use the ones I'll add to the context or a new quick API.
+                    // Actually, I'll just create a tiny API for this in group_portal/views.py.
+                });
+        }
+
+        // Simpler: Just hardcode or fetch the common portal groups if they're few.
+        // Better: let's use the new search API but it doesn't return groups.
+        // I'll add an API to group_portal/views.py to list groups.
+
+        function renderSelectedChips() {
+            selectedWrap.innerHTML = '';
+            Object.keys(selectedMap).forEach(function (id) {
+                var chip = document.createElement('span');
+                chip.className = 'ph-recipient-chip';
+                chip.innerHTML = '<span class="ph-recipient-chip__text">' + escapeHtml(selectedMap[id]) + '</span>' +
+                    '<button type="button" class="ph-recipient-chip__x" data-remove-id="' + id + '" aria-label="Remove">&times;</button>';
+                selectedWrap.appendChild(chip);
+            });
+            selectedWrap.querySelectorAll('[data-remove-id]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    delete selectedMap[btn.getAttribute('data-remove-id')];
+                    renderSelectedChips();
+                });
+            });
+        }
+
+        function runSearch() {
+            var q = (searchIn.value || '').trim();
+            var role = (roleFilter && roleFilter.value) ? roleFilter.value : '';
+            if (q.length < 1) {
+                searchResultsEl.hidden = true;
+                searchResultsEl.innerHTML = '';
+                return;
+            }
+            // Use the global admin-broadcast-search which I just refactored
+            fetch('{% url "admin-broadcast-search" %}?q=' + encodeURIComponent(q) + (role ? '&role=' + encodeURIComponent(role) : ''), {
+                credentials: 'same-origin'
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    searchResultsEl.innerHTML = '';
+                    if (!data.ok || !data.results || !data.results.length) {
+                        var empty = document.createElement('div');
+                        empty.className = 'ph-search-empty';
+                        empty.textContent = 'No matches';
+                        searchResultsEl.appendChild(empty);
+                        searchResultsEl.hidden = false;
+                        return;
+                    }
+                    data.results.forEach(function (u) {
+                        var btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'ph-search-hit';
+                        btn.style.display = 'flex';
+                        btn.style.justifyContent = 'space-between';
+                        btn.innerHTML = `<span>${escapeHtml(u.label)}</span> <span style="font-size:0.6rem; opacity:0.6; text-transform:uppercase;">${u.type || 'user'}</span>`;
+                        btn.addEventListener('click', function () {
+                            selectedMap[String(u.id)] = u.label;
+                            renderSelectedChips();
+                            searchIn.value = '';
+                            searchResultsEl.hidden = true;
+                            searchResultsEl.innerHTML = '';
+                        });
+                        searchResultsEl.appendChild(btn);
+                    });
+                    searchResultsEl.hidden = false;
+                })
+                .catch(function () {
+                    searchResultsEl.innerHTML = '<div class="ph-search-empty">Search failed</div>';
+                    searchResultsEl.hidden = false;
+                });
+        }
+
+        if (searchIn) {
+            searchIn.addEventListener('input', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(runSearch, 320);
+            });
+        }
+        if (roleFilter) {
+            roleFilter.addEventListener('change', function () {
+                if ((searchIn.value || '').trim().length) runSearch();
+            });
+        }
+
+        function loadPortalGroups() {
+            if (!groupWrap) return;
+            groupWrap.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            // We use a new quick API I'll add to provide the groups list for the checkboxes
+            fetch('/group/admin-messaging/search/?list_groups=1', { credentials: 'same-origin' })
+                .then(r => r.json())
+                .then(data => {
+                    groupWrap.innerHTML = '';
+                    if (data.groups && data.groups.length > 0) {
+                        data.groups.forEach(g => {
+                            const label = document.createElement('label');
+                            label.className = 'ph-audience-chip';
+                            label.style.background = '#fef2f2';
+                            label.style.color = '#991b1b';
+                            label.innerHTML = `<input type="checkbox" name="ph_portal_group" value="${g.id}"> <span>${escapeHtml(g.name)}</span>`;
+                            groupWrap.appendChild(label);
+                        });
+                    } else {
+                        groupWrap.innerHTML = '<span style="font-size:0.75rem; color:#94a3b8;">No portal groups found.</span>';
+                    }
+                })
+                .catch(() => {
+                    groupWrap.innerHTML = '<span style="font-size:0.75rem; color:#ef4444;">Failed to load groups.</span>';
+                });
+        }
+
+        function openModal() {
+            overlay.hidden = false;
+            document.body.style.overflow = 'hidden';
+            statusEl.hidden = true;
+            statusEl.textContent = '';
+            selectedMap = {};
+            renderSelectedChips();
+            loadPortalGroups();
+            if (searchIn) searchIn.value = '';
+            if (searchResultsEl) {
+                searchResultsEl.hidden = true;
+                searchResultsEl.innerHTML = '';
+            }
+            titleIn.focus();
+        }
+        function closeModal() {
+            overlay.hidden = true;
+            document.body.style.overflow = '';
+        }
+        openBtn.addEventListener('click', openModal);
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) closeModal();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !overlay.hidden) closeModal();
+        });
+
+        submitBtn.addEventListener('click', function () {
+            var title = (titleIn.value || '').trim();
+            var message = (bodyIn.value || '').trim();
+            var audiences = [];
+            document.querySelectorAll('input[name="ph_aud"]:checked').forEach(function (cb) {
+                audiences.push(cb.value);
+            });
+            var portalGroups = [];
+            document.querySelectorAll('input[name="ph_portal_group"]:checked').forEach(function (cb) {
+                portalGroups.push(cb.value);
+            });
+
+            var userIds = Object.keys(selectedMap); // No longer parseInt since we have prefixes like u_ and m_
+
+            if (!title || !message) {
+                statusEl.hidden = false;
+                statusEl.className = 'ph-broadcast-status ph-broadcast-status--err';
+                statusEl.textContent = 'Please enter both a title and a message.';
+                return;
+            }
+            if (!audiences.length && !userIds.length && !portalGroups.length) {
+                statusEl.hidden = false;
+                statusEl.className = 'ph-broadcast-status ph-broadcast-status--err';
+                statusEl.textContent = 'Select at least one group or add individual recipients.';
+                return;
+            }
+            var csrftoken = phGetCookie('csrftoken');
+            if (!csrftoken) {
+                statusEl.hidden = false;
+                statusEl.className = 'ph-broadcast-status ph-broadcast-status--err';
+                statusEl.textContent = 'CSRF token missing. Refresh the page and try again.';
+                return;
+            }
+            submitBtn.disabled = true;
+            statusEl.hidden = true;
+            fetch('{% url "admin-broadcast-message" %}', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({ 
+                    title: title, 
+                    message: message, 
+                    audiences: audiences, 
+                    portal_groups: portalGroups,
+                    user_ids: userIds 
+                })
+            })
+                .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+                .then(function (res) {
+                    submitBtn.disabled = false;
+                    statusEl.hidden = false;
+                    if (res.ok && res.data.ok) {
+                        statusEl.className = 'ph-broadcast-status ph-broadcast-status--ok';
+                        statusEl.textContent = 'Sent to ' + res.data.sent + ' target(s).';
+                        titleIn.value = '';
+                        bodyIn.value = '';
+                        selectedMap = {};
+                        renderSelectedChips();
+                        document.querySelectorAll('input[name="ph_portal_group"]:checked').forEach(cb => cb.checked = false);
+                        setTimeout(closeModal, 2200);
+                    } else {
+                        statusEl.className = 'ph-broadcast-status ph-broadcast-status--err';
+                        statusEl.textContent = (res.data && res.data.error) ? res.data.error : 'Could not send.';
+                    }
+                })
+                .catch(function () {
+                    submitBtn.disabled = false;
+                    statusEl.hidden = false;
+                    statusEl.className = 'ph-broadcast-status ph-broadcast-status--err';
+                    statusEl.textContent = 'Network error. Try again.';
+                });
+        });
+    })();
+
+    /* —— New visitors modal —— */
+    (function () {
+        var openBtn = document.getElementById('phVisitorsOpen');
+        var overlay = document.getElementById('phVisitorsOverlay');
+        var closeBtn = document.getElementById('phVisitorsClose');
+        var closeBtn2 = document.getElementById('phVisitorsCloseBtn');
+        var daysSel = document.getElementById('phVisitorsDays');
+        var tbody = document.getElementById('phVisitorsTbody');
+        var statsEl = document.getElementById('phVisitorsStats');
+        var loadingEl = document.getElementById('phVisitorsLoading');
+        var errEl = document.getElementById('phVisitorsError');
+        var emptyEl = document.getElementById('phVisitorsEmpty');
+        var tableEl = document.getElementById('phVisitorsTable');
+        if (!openBtn || !overlay) return;
+
+        var phUserChangelist = "{% url 'admin:accounts_customuser_changelist' %}";
+        function phUserChangeUrl(id) {
+            return phUserChangelist.replace(/\/?$/, '/') + id + '/change/';
+        }
+
+        function closeVisitors() {
+            overlay.hidden = true;
+            document.body.style.overflow = '';
+        }
+        function openVisitors() {
+            overlay.hidden = false;
+            document.body.style.overflow = 'hidden';
+            loadVisitors();
+        }
+        function loadVisitors() {
+            var days = (daysSel && daysSel.value) ? daysSel.value : '30';
+            loadingEl.hidden = false;
+            errEl.hidden = true;
+            emptyEl.hidden = true;
+            tableEl.hidden = false;
+            tbody.innerHTML = '';
+            statsEl.textContent = '';
+            fetch('{% url "admin-recent-visitors" %}?days=' + encodeURIComponent(days), { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    loadingEl.hidden = true;
+                    if (!data.ok) {
+                        errEl.hidden = false;
+                        errEl.textContent = data.error || 'Could not load.';
+                        return;
+                    }
+                    statsEl.textContent =
+                        data.count_last_7_days +
+                        ' new in the last 7 days · ' +
+                        data.count_in_window +
+                        ' in the selected window (showing up to 120).';
+                    if (!data.visitors || !data.visitors.length) {
+                        emptyEl.hidden = false;
+                        tableEl.hidden = true;
+                        return;
+                    }
+                    data.visitors.forEach(function (v) {
+                        var tr = document.createElement('tr');
+                        var joined = v.joined_at ? new Date(v.joined_at).toLocaleString() : '—';
+                        var activeBadge = v.is_active ? '' : ' <span class="ph-visitors-inactive">inactive</span>';
+                        tr.innerHTML =
+                            '<td>' + escapeHtml(v.email) + activeBadge + '</td>' +
+                            '<td>' + escapeHtml(v.username) + '</td>' +
+                            '<td><span class="ph-visitors-role">' + escapeHtml(v.role_display || v.role) + '</span></td>' +
+                            '<td>' + escapeHtml(joined) + '</td>' +
+                            '<td><a class="ph-visitors-admin-link" href="' + phUserChangeUrl(v.id) + '">Open in admin</a></td>';
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(function () {
+                    loadingEl.hidden = true;
+                    errEl.hidden = false;
+                    errEl.textContent = 'Network error.';
+                });
+        }
+
+        openBtn.addEventListener('click', openVisitors);
+        closeBtn.addEventListener('click', closeVisitors);
+        closeBtn2.addEventListener('click', closeVisitors);
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) closeVisitors();
+        });
+        if (daysSel) {
+            daysSel.addEventListener('change', function () {
+                if (!overlay.hidden) loadVisitors();
+            });
+        }
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !overlay.hidden) closeVisitors();
+        });
+    })();
+</script>
+{% endblock %}

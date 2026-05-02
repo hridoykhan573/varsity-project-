@@ -1,0 +1,6 @@
+WARNING 2026-04-12 16:59:58,961 security Suspicious SQL pattern detected in input: admin@petcare.com; DROP TABLE users
+ERROR 2026-04-12 16:59:58,961 middleware Blocked SQL Injection attempt in JSON body: /api/accounts/forgot-password/ | IP: 127.0.0.1
+WARNING 2026-04-13 13:11:57,610 security Suspicious SQL pattern detected in input: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3NTY2ODM3OCwiaWF0IjoxNzc1MDYzNTc4LCJqdGkiOiJmMDc5NDEyODMxMGI0YjMyYmY4NDYwY2NkNmZlNWViMSIsInVzZXJfaWQiOjksInVzZXJuYW1lIjoiQXNoaWsiLCJlbWFpbCI6InUxQGdtYWlsLmNvbSIsInJvbGUiOiJvd25lciJ9.V7qMsrr_yPzzdTBC5Agb_pmxhDM0LMTU1zK--FTlQS4
+ERROR 2026-04-13 13:11:57,612 middleware Blocked SQL Injection attempt in JSON body: /api/auth/logout/ | IP: 127.0.0.1
+WARNING 2026-04-18 12:07:23,883 security Suspicious SQL pattern detected in input: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3NTY2ODM3OCwiaWF0IjoxNzc1MDYzNTc4LCJqdGkiOiJmMDc5NDEyODMxMGI0YjMyYmY4NDYwY2NkNmZlNWViMSIsInVzZXJfaWQiOjksInVzZXJuYW1lIjoiQXNoaWsiLCJlbWFpbCI6InUxQGdtYWlsLmNvbSIsInJvbGUiOiJvd25lciJ9.V7qMsrr_yPzzdTBC5Agb_pmxhDM0LMTU1zK--FTlQS4
+ERROR 2026-04-18 12:07:23,883 middleware Blocked SQL Injection attempt in JSON body: /api/auth/logout/ | IP: 127.0.0.1
